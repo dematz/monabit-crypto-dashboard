@@ -7,13 +7,13 @@ import {
   Search,
   Star,
 } from "lucide-react";
-import { CRYPTO_ASSETS } from "@/lib/mock-data";
+import { fetchTop10 } from "@/services/crypto-api";
 import { formatCompact, formatCurrency } from "@/lib/format";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertModal } from "./alert-modal";
-import type { CryptoAsset } from "@/types";
+import { toDisplayAsset, type DisplayCryptoAsset } from "@/types";
 import { Line, LineChart, ResponsiveContainer } from "recharts";
 
 type Filter = "all" | "favorites" | "gainers" | "losers";
@@ -24,15 +24,15 @@ export function CryptoTable() {
   const toggleFavorite = useAppStore((s) => s.toggleFavorite);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
-  const [alertAsset, setAlertAsset] = useState<CryptoAsset | null>(null);
+  const [alertAsset, setAlertAsset] = useState<DisplayCryptoAsset | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["top-crypto"],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 250));
-      return CRYPTO_ASSETS;
+      const res = await fetchTop10();
+      return res.data.map((a, i) => toDisplayAsset(a, i));
     },
-    staleTime: 30_000,
+    refetchInterval: 60_000,
   });
 
   const rows = useMemo(() => {
@@ -65,7 +65,7 @@ export function CryptoTable() {
         <div>
           <h2 className="text-base font-semibold">Top 10 Criptomonedas</h2>
           <p className="text-xs text-muted-foreground">
-            Datos actualizados en tiempo real (simulado)
+            Datos actualizados cada 60s desde CoinGecko
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

@@ -2,6 +2,7 @@ export type UserRole = 'admin' | 'user';
 
 export interface UserProfile {
   id: string;
+  email?: string | null;
   display_name: string | null;
   avatar_url: string | null;
   role: UserRole;
@@ -64,3 +65,5 @@ export interface HealthStatus {
     binance_ws: 'ok' | 'error';
   };
 }
+
+export type PricePoint = { t: string; price: number };

@@ -7,6 +7,7 @@ import { LoginPage } from '@/pages/auth/login';
 import { DashboardPage } from '@/pages/dashboard';
 import { SettingsPage } from '@/pages/settings';
 import { UsersPage } from '@/pages/users';
+import { useAppStore } from '@/stores/app-store';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,6 +17,12 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const user = useAppStore((s) => s.user);
+  if (!user) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
 
 function NotFoundPage() {
   return (
@@ -44,7 +51,13 @@ export function App() {
         <ThemeManager />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route element={<AppShellLayout />}>
+          <Route
+            element={
+              <ProtectedRoute>
+                <AppShellLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<DashboardPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="settings" element={<SettingsPage />} />

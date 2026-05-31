@@ -9,3 +9,6 @@ coverage
 .next
 *.tsbuildinfo
 .cache
+supabase/.temp
+supabase/.branches
+supabase/volumes

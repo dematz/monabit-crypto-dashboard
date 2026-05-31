@@ -30,12 +30,12 @@ export async function authenticate(
   };
 }
 
-export function requireAdmin(
+export async function requireAdmin(
   request: FastifyRequest,
   reply: FastifyReply,
-): void {
+): Promise<void> {
   if (request.user?.role !== 'admin') {
-    reply.status(403).send({ error: 'Forbidden: admin role required' });
+    return reply.status(403).send({ error: 'Forbidden: admin role required' });
   }
 }
 

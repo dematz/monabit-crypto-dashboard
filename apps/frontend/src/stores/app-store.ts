@@ -1,8 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Theme, Currency, SessionUser } from '@/types';
 
-export type { Theme, Currency };
+export type Theme = 'light' | 'dark' | 'system';
+export type Currency = 'USD' | 'EUR';
+
+export type SessionUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: 'Admin' | 'User';
+} | null;
 
 type AppState = {
   theme: Theme;
@@ -11,14 +18,17 @@ type AppState = {
   favorites: string[];
   aiOpen: boolean;
   user: SessionUser;
+  token: string | null;
   setTheme: (t: Theme) => void;
   setCurrency: (c: Currency) => void;
   setRefreshInterval: (n: number) => void;
   toggleFavorite: (id: string) => void;
   setAiOpen: (open: boolean) => void;
-  login: (u: NonNullable<SessionUser>) => void;
+  setSession: (user: NonNullable<SessionUser>, token: string) => void;
   logout: () => void;
 };
+
+import { setTokenGetter } from '@/services/api';
 
 export const useAppStore = create<AppState>()(
   persist(
@@ -28,7 +38,8 @@ export const useAppStore = create<AppState>()(
       refreshInterval: 30,
       favorites: ['bitcoin', 'ethereum'],
       aiOpen: false,
-      user: { name: 'María González', email: 'maria@monabit.io', role: 'Admin' },
+      user: null,
+      token: null,
       setTheme: (theme) => set({ theme }),
       setCurrency: (currency) => set({ currency }),
       setRefreshInterval: (refreshInterval) => set({ refreshInterval }),
@@ -39,9 +50,11 @@ export const useAppStore = create<AppState>()(
             : [...s.favorites, id],
         })),
       setAiOpen: (aiOpen) => set({ aiOpen }),
-      login: (user) => set({ user }),
-      logout: () => set({ user: null }),
+      setSession: (user, token) => set({ user, token }),
+      logout: () => set({ user: null, token: null }),
     }),
     { name: 'monabit-app' },
   ),
 );
+
+setTokenGetter(() => useAppStore.getState().token);

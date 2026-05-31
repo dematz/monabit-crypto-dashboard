@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { X } from "lucide-react";
-import type { CryptoAsset } from "@/types";
+import type { DisplayCryptoAsset } from "@/types";
 import { formatCurrency } from "@/lib/format";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
 
-type Props = { asset: CryptoAsset | null; onClose: () => void };
+type Props = { asset: DisplayCryptoAsset | null; onClose: () => void };
 
 export function AlertModal({ asset, onClose }: Props) {
   const currency = useAppStore((s) => s.currency);

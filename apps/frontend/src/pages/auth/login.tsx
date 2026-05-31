@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { Bitcoin, Eye, EyeOff, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppStore } from '@/stores/app-store';
-import { CRYPTO_ASSETS } from '@/lib/mock-data';
+import { supabase } from '@/services/supabase';
+import { api } from '@/services/api';
+import type { CryptoAsset } from '@monabit/shared-types';
 import { formatCurrency, formatPercent } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const login = useAppStore((s) => s.login);
+  const setSession = useAppStore((s) => s.setSession);
   const existingUser = useAppStore((s) => s.user);
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
@@ -22,31 +24,47 @@ export function LoginPage() {
     if (existingUser) navigate('/');
   }, [existingUser, navigate]);
 
-  const submit = (e: React.FormEvent) => {
+  async function fetchProfile(token: string) {
+    const { user, profile } = await api.get<{ user: { id: string; email: string; role: 'admin' | 'user' }; profile: { display_name: string | null } }>('/auth/me');
+    setSession(
+      { id: user.id, name: profile?.display_name ?? user.email.split('@')[0] ?? 'Usuario', email: user.email, role: user.role === 'admin' ? 'Admin' : 'User' },
+      token,
+    );
+  }
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || (mode === 'register' && !name)) {
       toast.error('Completá todos los campos');
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      login({
-        name: name || email.split('@')[0] || 'Usuario',
-        email,
-        role: email.includes('admin') ? 'Admin' : 'User',
-      });
+    try {
+      if (mode === 'register') {
+        const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { display_name: name } } });
+        if (error) throw error;
+        if (!data.session) {
+          toast.success('Revisá tu email para confirmar la cuenta');
+          setLoading(false);
+          return;
+        }
+        await fetchProfile(data.session.access_token);
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        await fetchProfile(data.session.access_token);
+      }
       toast.success(mode === 'login' ? 'Bienvenido a MonaBit' : 'Cuenta creada');
       navigate('/');
-    }, 600);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error de autenticación');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogle = () => {
-    setLoading(true);
-    setTimeout(() => {
-      login({ name: 'María González', email: 'maria@monabit.io', role: 'Admin' });
-      toast.success('Sesión iniciada con Google');
-      navigate('/');
-    }, 500);
+    toast.message('Google Sign-In no disponible en entorno local');
   };
 
   return (
@@ -76,44 +94,6 @@ export function LoginPage() {
             KPIs en vivo, alertas inteligentes, gráficas premium y un asistente IA al alcance
             de un atajo.
           </p>
-        </div>
-
-        <div className="relative grid gap-3">
-          {CRYPTO_ASSETS.slice(0, 3).map((a) => {
-            const positive = a.change24h >= 0;
-            return (
-              <div
-                key={a.id}
-                className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.03] p-4 backdrop-blur"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-full bg-white/5 text-lg">
-                    {a.logo}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold">{a.name}</p>
-                    <p className="text-xs text-muted-foreground">{a.symbol}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold tabular-nums">
-                    {formatCurrency(a.price, 'USD')}
-                  </p>
-                  <p
-                    className={cn(
-                      'flex items-center justify-end gap-1 text-xs font-medium',
-                      positive ? 'text-success' : 'text-danger',
-                    )}
-                  >
-                    <TrendingUp
-                      className={cn('h-3 w-3', !positive && 'rotate-180')}
-                    />
-                    {formatPercent(a.change24h)}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
         </div>
       </div>
 

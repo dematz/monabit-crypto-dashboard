@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CRYPTO_ASSETS, buildPriceHistory } from "@/lib/mock-data";
+import { fetchTop10, fetchCoinHistory } from "@/services/crypto-api";
+import { toDisplayAsset } from "@/types";
 import { formatCurrency } from "@/lib/format";
 import { useAppStore } from "@/stores/app-store";
 import {
@@ -23,18 +24,24 @@ export function PriceChart() {
   const [assetId, setAssetId] = useState("bitcoin");
   const [range, setRange] = useState<Range>("7D");
 
-  const asset = useMemo(() => CRYPTO_ASSETS.find((a) => a.id === assetId)!, [assetId]);
-
-  const { data, isLoading } = useQuery({
-    queryKey: ["price-history", assetId, range],
+  const { data: assets } = useQuery({
+    queryKey: ["top-crypto"],
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 280));
-      return buildPriceHistory(assetId, range);
+      const res = await fetchTop10();
+      return res.data.map((a, i) => toDisplayAsset(a, i));
     },
+    staleTime: 60_000,
+  });
+
+  const asset = useMemo(() => assets?.find((a) => a.id === assetId), [assets, assetId]);
+
+  const { data: history, isLoading } = useQuery({
+    queryKey: ["price-history", assetId, range],
+    queryFn: () => fetchCoinHistory(assetId, range),
     staleTime: 30_000,
   });
 
-  const positive = asset.change24h >= 0;
+  const positive = (asset?.change24h ?? 0) >= 0;
   const stroke = positive ? "var(--color-success)" : "var(--color-danger)";
 
   return (
@@ -42,7 +49,7 @@ export function PriceChart() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="grid h-11 w-11 place-items-center rounded-xl bg-accent text-xl font-semibold">
-            {asset.logo}
+            {asset?.logo ?? "?"}
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -51,7 +58,7 @@ export function PriceChart() {
                 onChange={(e) => setAssetId(e.target.value)}
                 className="bg-transparent text-lg font-semibold tracking-tight focus:outline-none"
               >
-                {CRYPTO_ASSETS.map((a) => (
+                {(assets ?? []).map((a) => (
                   <option key={a.id} value={a.id} className="bg-popover text-foreground">
                     {a.name} ({a.symbol})
                   </option>
@@ -59,15 +66,15 @@ export function PriceChart() {
               </select>
             </div>
             <p className="text-2xl font-semibold tabular-nums">
-              {formatCurrency(asset.price, currency)}{" "}
+              {formatCurrency(asset?.price ?? 0, currency)}{" "}
               <span
                 className={cn(
                   "ml-2 text-sm font-medium",
                   positive ? "text-success" : "text-danger",
                 )}
               >
-                {positive ? "+" : ""}
-                {asset.change24h.toFixed(2)}%
+                {asset && asset.change24h >= 0 ? "+" : ""}
+                {asset?.change24h.toFixed(2)}%
               </span>
             </p>
           </div>
@@ -93,11 +100,11 @@ export function PriceChart() {
       </div>
 
       <div className="mt-6 h-72">
-        {isLoading || !data ? (
+        {isLoading || !history ? (
           <Skeleton className="h-full w-full rounded-xl" />
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+            <AreaChart data={history.data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id="priceFill" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={stroke} stopOpacity={0.35} />
@@ -130,7 +137,7 @@ export function PriceChart() {
                   fontSize: 12,
                 }}
                 labelStyle={{ color: "var(--color-muted-foreground)" }}
-                formatter={(v: number) => [formatCurrency(v, currency), asset.symbol]}
+                formatter={(v: number) => [formatCurrency(v, currency), asset?.symbol ?? ""]}
               />
               <Area
                 type="monotone"

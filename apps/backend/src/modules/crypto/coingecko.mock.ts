@@ -1,4 +1,37 @@
-import type { CryptoAsset, MarketOverview } from '@monabit/shared-types';
+import type { CryptoAsset, MarketOverview, PricePoint } from '@monabit/shared-types';
+
+function seed(base: number, vol: number, points: number, n: number): PricePoint[] {
+  const out: PricePoint[] = [];
+  let v = base;
+  for (let i = 0; i < points; i++) {
+    const r = Math.sin(i * 0.6 + n) + Math.cos(i * 0.27 + n * 1.7);
+    v = Math.max(base * 0.6, v + r * vol);
+    const label = `${i + 1}`;
+    out.push({ t: label, price: Number(v.toFixed(2)) });
+  }
+  return out;
+}
+
+const HISTORY_SEED: Record<string, { base: number; vol: number }> = {
+  bitcoin: { base: 67000, vol: 600 },
+  ethereum: { base: 3500, vol: 40 },
+  tether: { base: 1, vol: 0.002 },
+  binancecoin: { base: 615, vol: 9 },
+  solana: { base: 150, vol: 4 },
+  ripple: { base: 0.52, vol: 0.012 },
+  'usd-coin': { base: 1, vol: 0.001 },
+  cardano: { base: 0.45, vol: 0.01 },
+  dogecoin: { base: 0.155, vol: 0.004 },
+  'avalanche-2': { base: 36, vol: 1.1 },
+};
+
+export function mockCoinHistory(coinId: string, range: '1D' | '7D' | '1M'): PricePoint[] {
+  const s = HISTORY_SEED[coinId] ?? { base: 100, vol: 2 };
+  const points = range === '1D' ? 24 : range === '7D' ? 168 : 720;
+  const volMultiplier = range === '1D' ? 0.008 : range === '7D' ? 0.02 : 0.04;
+  return seed(s.base, s.base * volMultiplier, points, s.base);
+}
+
 
 export const mockTop10: CryptoAsset[] = [
   { id: 'bitcoin', symbol: 'btc', name: 'Bitcoin', current_price: 67420, market_cap: 1327000000000, total_volume: 28500000000, price_change_percentage_24h: 2.34, image: '' },

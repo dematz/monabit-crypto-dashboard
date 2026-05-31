@@ -1,4 +1,4 @@
-import type { CryptoAsset, PricePoint, UserRow } from '@/types';
+import type { DisplayCryptoAsset, PricePoint, UserRow } from '@/types';
 
 const seed = (n: number, base: number, vol: number, points: number) => {
   const out: number[] = [];
@@ -11,7 +11,7 @@ const seed = (n: number, base: number, vol: number, points: number) => {
   return out;
 };
 
-export const CRYPTO_ASSETS: CryptoAsset[] = [
+export const CRYPTO_ASSETS: DisplayCryptoAsset[] = [
   {
     id: 'bitcoin',
     rank: 1,

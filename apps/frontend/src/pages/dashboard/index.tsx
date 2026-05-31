@@ -1,12 +1,20 @@
+import { useQuery } from '@tanstack/react-query';
 import { KpiCard } from '@/components/features/kpi-card';
 import { PriceChart } from '@/components/features/price-chart';
 import { CryptoTable } from '@/components/features/crypto-table';
-import { MARKET_KPIS } from '@/lib/mock-data';
+import { fetchMarketOverview } from '@/services/crypto-api';
 import { formatCompact } from '@/lib/format';
 import { useAppStore } from '@/stores/app-store';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function DashboardPage() {
   const currency = useAppStore((s) => s.currency);
+
+  const { data: market, isLoading } = useQuery({
+    queryKey: ['market-overview'],
+    queryFn: fetchMarketOverview,
+    refetchInterval: 120_000,
+  });
 
   return (
     <div className="space-y-6">
@@ -18,27 +26,37 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <KpiCard
-          label="Market Cap Total"
-          value={formatCompact(MARKET_KPIS.marketCap, currency)}
-          change={MARKET_KPIS.marketCapChange}
-          spark={MARKET_KPIS.marketCapSpark}
-          accent="brand"
-        />
-        <KpiCard
-          label="Volumen 24h"
-          value={formatCompact(MARKET_KPIS.volume24h, currency)}
-          change={MARKET_KPIS.volumeChange}
-          spark={MARKET_KPIS.volumeSpark}
-          accent="info"
-        />
-        <KpiCard
-          label="Dominancia BTC"
-          value={`${MARKET_KPIS.btcDominance.toFixed(2)}%`}
-          change={MARKET_KPIS.btcDominanceChange}
-          spark={MARKET_KPIS.dominanceSpark}
-          accent="warning"
-        />
+        {isLoading || !market ? (
+          <>
+            <Skeleton className="h-32 rounded-2xl" />
+            <Skeleton className="h-32 rounded-2xl" />
+            <Skeleton className="h-32 rounded-2xl" />
+          </>
+        ) : (
+          <>
+            <KpiCard
+              label="Market Cap Total"
+              value={formatCompact(market.data.total_market_cap.usd, currency)}
+              change={market.data.market_cap_change_percentage_24h_usd}
+              spark={[]}
+              accent="brand"
+            />
+            <KpiCard
+              label="Volumen 24h"
+              value={formatCompact(market.data.total_volume.usd, currency)}
+              change={0}
+              spark={[]}
+              accent="info"
+            />
+            <KpiCard
+              label="Dominancia BTC"
+              value={`${market.data.market_cap_percentage.btc.toFixed(2)}%`}
+              change={0}
+              spark={[]}
+              accent="warning"
+            />
+          </>
+        )}
       </div>
 
       <PriceChart />

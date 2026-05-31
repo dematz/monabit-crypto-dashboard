@@ -1,7 +1,7 @@
-import type { CryptoAsset, MarketOverview } from '@monabit/shared-types';
+import type { CryptoAsset, MarketOverview, PricePoint } from '@monabit/shared-types';
 import { config } from '../../config/index.js';
 import { getCached, setCache } from './crypto.cache.js';
-import { mockTop10, mockMarketOverview } from './coingecko.mock.js';
+import { mockTop10, mockMarketOverview, mockCoinHistory } from './coingecko.mock.js';
 
 async function fetchTop10(): Promise<CryptoAsset[]> {
   if (config.MOCK_CRYPTO) return mockTop10;
@@ -36,4 +36,28 @@ export async function getMarketOverview(): Promise<{ data: MarketOverview; cache
   const data = await fetchMarketOverview();
   setCache('market_overview', data);
   return { data, cached: false };
+}
+
+export async function getCoinHistory(
+  coinId: string,
+  range: '1D' | '7D' | '1M' = '7D',
+): Promise<{ data: PricePoint[]; cached: boolean }> {
+  if (config.MOCK_CRYPTO) {
+    return { data: mockCoinHistory(coinId, range), cached: true };
+  }
+  const cacheKey = `coin_history:${coinId}:${range}`;
+  const cached = getCached<PricePoint[]>(cacheKey);
+  if (cached) return { data: cached, cached: true };
+  const { default: axios } = await import('axios');
+  const days = range === '1D' ? 1 : range === '7D' ? 7 : 30;
+  const { data } = await axios.get<{ prices: [number, number][] }>(
+    `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart`,
+    { params: { vs_currency: 'usd', days } },
+  );
+  const points: PricePoint[] = data.prices.map(([ts, price], i) => ({
+    t: range === '1D' ? `${String(i).padStart(2, '0')}:00` : `D${i + 1}`,
+    price,
+  }));
+  setCache(cacheKey, points);
+  return { data: points, cached: false };
 }

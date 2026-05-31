@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MoreHorizontal, Pencil, Plus, Power, Search, ShieldCheck, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { MOCK_USERS } from '@/lib/mock-data';
-import type { UserRow } from '@/types';
+import { fetchUsers, deactivateUser } from '@/services/users-api';
 import { useAppStore } from '@/stores/app-store';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,8 +17,45 @@ import {
 export function UsersPage() {
   const user = useAppStore((s) => s.user);
   const navigate = useNavigate();
-  const [rows, setRows] = useState<UserRow[]>(MOCK_USERS);
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState('');
+
+  const { data: users, isLoading } = useQuery({
+    queryKey: ['users'],
+    queryFn: fetchUsers,
+  });
+
+  const deactivateMutation = useMutation({
+    mutationFn: deactivateUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Usuario desactivado');
+    },
+    onError: () => toast.error('Error al desactivar usuario'),
+  });
+
+  const rows = useMemo(() => {
+    const base = users ?? [];
+    return base.map((u) => ({
+      id: u.id,
+      name: u.display_name ?? u.email?.split('@')[0] ?? 'Sin nombre',
+      email: u.email ?? '',
+      role: (u.role === 'admin' ? 'Admin' : 'User') as 'Admin' | 'User',
+      status: (u.is_active ? 'Activo' : 'Inactivo') as 'Activo' | 'Inactivo',
+      createdAt: u.created_at ? new Date(u.created_at).toLocaleDateString('es-AR') : '-',
+    }));
+  }, [users]);
+
+  const filtered = useMemo(
+    () =>
+      rows.filter((r) =>
+        query
+          ? r.name.toLowerCase().includes(query.toLowerCase()) ||
+            r.email.toLowerCase().includes(query.toLowerCase())
+          : true,
+      ),
+    [rows, query],
+  );
 
   if (user?.role !== 'Admin') {
     return (
@@ -38,31 +76,6 @@ export function UsersPage() {
       </div>
     );
   }
-
-  const filtered = useMemo(
-    () =>
-      rows.filter((r) =>
-        query
-          ? r.name.toLowerCase().includes(query.toLowerCase()) ||
-            r.email.toLowerCase().includes(query.toLowerCase())
-          : true,
-      ),
-    [rows, query],
-  );
-
-  const toggleStatus = (id: string) => {
-    setRows((rs) =>
-      rs.map((r) =>
-        r.id === id ? { ...r, status: r.status === 'Activo' ? 'Inactivo' : 'Activo' } : r,
-      ),
-    );
-    toast.success('Estado actualizado');
-  };
-
-  const remove = (id: string) => {
-    setRows((rs) => rs.filter((r) => r.id !== id));
-    toast.success('Usuario eliminado');
-  };
 
   return (
     <div className="space-y-6">
@@ -107,84 +120,86 @@ export function UsersPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((u) => (
-                <tr
-                  key={u.id}
-                  className="border-b border-border/60 transition-colors hover:bg-accent/40"
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="grid h-9 w-9 place-items-center rounded-full bg-accent text-sm font-semibold">
-                        {u.name.charAt(0)}
-                      </div>
-                      <span className="font-medium">{u.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={cn(
-                        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-                        u.role === 'Admin'
-                          ? 'bg-brand/15 text-brand'
-                          : 'bg-accent text-muted-foreground',
-                      )}
+              {isLoading
+                ? Array.from({ length: 4 }).map((_, i) => (
+                    <tr key={i} className="border-b border-border/60">
+                      <td colSpan={6} className="px-4 py-3">
+                        <Skeleton className="h-10 w-full rounded-md" />
+                      </td>
+                    </tr>
+                  ))
+                : filtered.map((u) => (
+                    <tr
+                      key={u.id}
+                      className="border-b border-border/60 transition-colors hover:bg-accent/40"
                     >
-                      {u.role}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={cn(
-                        'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium',
-                        u.status === 'Activo'
-                          ? 'bg-success/15 text-success'
-                          : 'bg-danger/15 text-danger',
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          'h-1.5 w-1.5 rounded-full',
-                          u.status === 'Activo' ? 'bg-success' : 'bg-danger',
-                        )}
-                      />
-                      {u.status}
-                    </span>
-                  </td>
-                  <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">
-                    {u.createdAt}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          type="button"
-                          className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                          aria-label="Acciones"
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="grid h-9 w-9 place-items-center rounded-full bg-accent text-sm font-semibold">
+                            {u.name.charAt(0)}
+                          </div>
+                          <span className="font-medium">{u.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={cn(
+                            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+                            u.role === 'Admin'
+                              ? 'bg-brand/15 text-brand'
+                              : 'bg-accent text-muted-foreground',
+                          )}
                         >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-44">
-                        <DropdownMenuItem onClick={() => toast.message('Edición simulada')}>
-                          <Pencil className="mr-2 h-4 w-4" /> Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => toggleStatus(u.id)}>
-                          <Power className="mr-2 h-4 w-4" />
-                          {u.status === 'Activo' ? 'Desactivar' : 'Activar'}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => remove(u.id)}
-                          className="text-danger focus:text-danger"
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={cn(
+                            'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium',
+                            u.status === 'Activo'
+                              ? 'bg-success/15 text-success'
+                              : 'bg-danger/15 text-danger',
+                          )}
                         >
-                          <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
+                          <span
+                            className={cn(
+                              'h-1.5 w-1.5 rounded-full',
+                              u.status === 'Activo' ? 'bg-success' : 'bg-danger',
+                            )}
+                          />
+                          {u.status}
+                        </span>
+                      </td>
+                      <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">
+                        {u.createdAt}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                              aria-label="Acciones"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuItem onClick={() => toast.message('Edición: pendiente')}>
+                              <Pencil className="mr-2 h-4 w-4" /> Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => deactivateMutation.mutate(u.id)}>
+                              <Power className="mr-2 h-4 w-4" />
+                              {u.status === 'Activo' ? 'Desactivar' : 'Activar'}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))}
+              {!isLoading && filtered.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
                     No se encontraron usuarios.
