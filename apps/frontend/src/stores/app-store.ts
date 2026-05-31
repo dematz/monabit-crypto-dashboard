@@ -29,10 +29,11 @@ type AppState = {
 };
 
 import { setTokenGetter } from '@/services/api';
+import { fetchPreferences, updatePreferences as apiUpdatePreferences } from '@/services/users-api';
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       theme: 'dark',
       currency: 'USD',
       refreshInterval: 30,
@@ -40,9 +41,25 @@ export const useAppStore = create<AppState>()(
       aiOpen: false,
       user: null,
       token: null,
-      setTheme: (theme) => set({ theme }),
-      setCurrency: (currency) => set({ currency }),
-      setRefreshInterval: (refreshInterval) => set({ refreshInterval }),
+
+      setTheme: async (theme) => {
+        set({ theme });
+        const user = get().user;
+        if (user) apiUpdatePreferences({ theme }).catch(() => {});
+      },
+
+      setCurrency: async (currency) => {
+        set({ currency });
+        const user = get().user;
+        if (user) apiUpdatePreferences({ currency }).catch(() => {});
+      },
+
+      setRefreshInterval: async (refreshInterval) => {
+        set({ refreshInterval });
+        const user = get().user;
+        if (user) apiUpdatePreferences({ refresh_interval: refreshInterval }).catch(() => {});
+      },
+
       toggleFavorite: (id) =>
         set((s) => ({
           favorites: s.favorites.includes(id)
@@ -50,7 +67,20 @@ export const useAppStore = create<AppState>()(
             : [...s.favorites, id],
         })),
       setAiOpen: (aiOpen) => set({ aiOpen }),
-      setSession: (user, token) => set({ user, token }),
+
+      setSession: (user, token) => {
+        set({ user, token });
+        fetchPreferences()
+          .then((prefs) => {
+            set({
+              theme: (prefs.theme as Theme) ?? 'dark',
+              currency: (prefs.currency as Currency) ?? 'USD',
+              refreshInterval: prefs.refresh_interval ?? 30,
+            });
+          })
+          .catch(() => {});
+      },
+
       logout: () => set({ user: null, token: null }),
     }),
     { name: 'monabit-app' },

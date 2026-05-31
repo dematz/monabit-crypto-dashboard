@@ -1,7 +1,9 @@
 import type { FastifyInstance } from 'fastify';
 import { authenticate, requireAdmin } from '../auth/auth.middleware.js';
 import { listUsers, getUserById, updateUser, deactivateUser } from './users.repository.js';
+import { getPreferences, upsertPreferences } from './preferences.repository.js';
 import { updateUserSchema, createUserSchema } from './users.schema.js';
+import { updatePreferencesSchema } from './preferences.schema.js';
 import type { CreateUserInput } from './users.schema.js';
 
 export async function usersModule(app: FastifyInstance) {
@@ -24,6 +26,17 @@ export async function usersModule(app: FastifyInstance) {
     const input = updateUserSchema.parse(request.body);
     const user = await updateUser(request.user.id, input);
     return user;
+  });
+
+  app.get('/users/me/preferences', { preHandler: [authenticate] }, async (request) => {
+    const prefs = await getPreferences(request.user.id);
+    return prefs ?? { theme: 'dark', currency: 'USD', refresh_interval: 30 };
+  });
+
+  app.patch('/users/me/preferences', { preHandler: [authenticate] }, async (request) => {
+    const input = updatePreferencesSchema.parse(request.body);
+    const prefs = await upsertPreferences(request.user.id, input);
+    return prefs;
   });
 
   app.get('/users/:id', { preHandler: [authenticate, requireAdmin] }, async (request) => {
