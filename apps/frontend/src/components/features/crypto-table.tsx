@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertModal } from './alert-modal';
 import { toDisplayAsset, type DisplayCryptoAsset } from '@/types';
-import { Line, LineChart, ResponsiveContainer } from 'recharts';
+import { Sparkline } from './recharts-sparkline';
 import { useBinanceWs } from '@/hooks/use-binance-ws';
 
 const SYMBOL_MAP: Record<string, string> = {
@@ -199,21 +199,7 @@ export function CryptoTable() {
                       </td>
                       <td className="hidden px-4 py-3 lg:table-cell">
                         <div className="h-10 w-28">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart
-                              data={a.sparkline.map((v, i) => ({ i, v }))}
-                              margin={{ top: 2, right: 2, bottom: 2, left: 2 }}
-                            >
-                              <Line
-                                type="monotone"
-                                dataKey="v"
-                                stroke={positive ? 'var(--color-success)' : 'var(--color-danger)'}
-                                strokeWidth={1.6}
-                                dot={false}
-                                isAnimationActive={false}
-                              />
-                            </LineChart>
-                          </ResponsiveContainer>
+                          <Sparkline data={a.sparkline} positive={positive} />
                         </div>
                       </td>
                       <td className="px-4 py-3 text-right">

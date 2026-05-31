@@ -1,12 +1,13 @@
 export const formatCurrency = (value: number, currency: 'USD' | 'EUR' = 'USD') => {
   const symbol = currency === 'USD' ? '$' : '€';
+  const locale = currency === 'USD' ? 'en-US' : 'de-DE';
   if (value >= 1) {
-    return `${symbol}${value.toLocaleString(undefined, {
+    return `${symbol}${value.toLocaleString(locale, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
   }
-  return `${symbol}${value.toLocaleString(undefined, {
+  return `${symbol}${value.toLocaleString(locale, {
     minimumFractionDigits: 4,
     maximumFractionDigits: 4,
   })}`;
