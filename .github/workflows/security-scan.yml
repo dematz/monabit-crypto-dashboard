@@ -10,6 +10,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Gitleaks
         uses: gitleaks/gitleaks-action@v2
 
@@ -21,6 +31,6 @@ jobs:
       - name: CodeQL Analyze
         uses: github/codeql-action/analyze@v3
 
-      - name: npm audit
-        run: npm audit --audit-level=high
+      - name: pnpm audit
+        run: pnpm audit --audit-level=high
         continue-on-error: true

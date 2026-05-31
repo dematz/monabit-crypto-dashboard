@@ -31,7 +31,7 @@ export async function createUser(input: CreateUserInput) {
     password: input.password,
     email_confirm: true,
     user_metadata: {
-      role: input.role ?? 'user',
+      role: input.role,
       display_name: input.display_name ?? null,
     },
   });
