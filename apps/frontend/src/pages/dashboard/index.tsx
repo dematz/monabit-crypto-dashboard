@@ -4,6 +4,7 @@ import { PriceChart } from '@/components/features/price-chart';
 import { CryptoTable } from '@/components/features/crypto-table';
 import { fetchMarketOverview } from '@/services/crypto-api';
 import { formatCompact } from '@/lib/format';
+import { generateSparkline } from '@/lib/sparkline';
 import { useAppStore } from '@/stores/app-store';
 import { useRefreshMs } from '@/hooks/use-refresh-ms';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -55,21 +56,21 @@ export function DashboardPage() {
               label="Market Cap Total"
               value={formatCompact(market.data.total_market_cap.usd, currency)}
               change={market.data.market_cap_change_percentage_24h_usd}
-              spark={[]}
+              spark={generateSparkline(market.data.market_cap_change_percentage_24h_usd)}
               accent="brand"
             />
             <KpiCard
               label="24h Volume"
               value={formatCompact(market.data.total_volume.usd, currency)}
               change={0}
-              spark={[]}
+              spark={generateSparkline(0)}
               accent="info"
             />
             <KpiCard
               label="BTC Dominance"
               value={`${market.data.market_cap_percentage.btc.toFixed(2)}%`}
               change={0}
-              spark={[]}
+              spark={generateSparkline(0)}
               accent="warning"
             />
           </>

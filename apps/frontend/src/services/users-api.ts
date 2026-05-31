@@ -26,6 +26,13 @@ export function toggleUserStatus(id: string, isActive: boolean) {
     .then((data) => userProfileSchema.parse(data));
 }
 
+export function updateUser(
+  id: string,
+  data: { display_name?: string; email?: string; role?: 'admin' | 'user' },
+) {
+  return api.patch(`/users/${id}`, data).then((data) => userProfileSchema.parse(data));
+}
+
 export function fetchPreferences() {
   return api.get('/users/me/preferences').then((data) => userPreferencesSchema.parse(data));
 }

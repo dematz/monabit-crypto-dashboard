@@ -152,7 +152,7 @@ export function CryptoTable() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <SearchInput value={query} onChange={setQuery} />
+          <SearchInput value={query} onChange={setQuery} aria-label="Search cryptocurrencies" />
           <div className="inline-flex rounded-lg border border-border bg-background p-1">
             {filters.map((f) => (
               <button

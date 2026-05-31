@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MoreHorizontal, Power, UserCheck, ShieldCheck, Plus } from 'lucide-react';
 import { toast } from 'sonner';
-import { fetchUsers, toggleUserStatus, createUser } from '@/services/users-api';
+import { fetchUsers, toggleUserStatus, createUser, updateUser } from '@/services/users-api';
 import { useAppStore } from '@/stores/app-store';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Pencil } from 'lucide-react';
 
 export function UsersPage() {
   const user = useAppStore((s) => s.user);
@@ -28,6 +29,17 @@ export function UsersPage() {
   });
 
   const [showCreate, setShowCreate] = useState(false);
+  const [editingUser, setEditingUser] = useState<{
+    id: string;
+    display_name: string;
+    email: string;
+    role: 'admin' | 'user';
+  } | null>(null);
+  const [editForm, setEditForm] = useState({
+    display_name: '',
+    email: '',
+    role: 'user' as 'admin' | 'user',
+  });
   const [createForm, setCreateForm] = useState({
     email: '',
     password: '',
@@ -55,6 +67,16 @@ export function UsersPage() {
     },
     onError: (_err, variables) =>
       toast.error(variables.isActive ? 'Failed to activate user' : 'Failed to deactivate user'),
+  });
+
+  const editMutation = useMutation({
+    mutationFn: () => updateUser(editingUser!.id, editForm),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('User updated');
+      setEditingUser(null);
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : 'Failed to update user'),
   });
 
   const rows = useMemo(() => {
@@ -114,6 +136,7 @@ export function UsersPage() {
               value={query}
               onChange={setQuery}
               placeholder="Search by name or email..."
+              aria-label="Search users"
               className="max-w-sm"
             />
             <button
@@ -205,6 +228,26 @@ export function UsersPage() {
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-44">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  const raw = users?.find((x) => x.id === u.id);
+                                  if (raw) {
+                                    setEditForm({
+                                      display_name: raw.display_name ?? '',
+                                      email: raw.email ?? '',
+                                      role: raw.role,
+                                    });
+                                    setEditingUser({
+                                      id: raw.id,
+                                      display_name: raw.display_name ?? '',
+                                      email: raw.email ?? '',
+                                      role: raw.role,
+                                    });
+                                  }
+                                }}
+                              >
+                                <Pencil className="mr-2 h-4 w-4" /> Edit
+                              </DropdownMenuItem>
                               {u.status === 'Active' ? (
                                 <DropdownMenuItem
                                   onClick={() =>
@@ -315,6 +358,63 @@ export function UsersPage() {
                   className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground hover:opacity-90 disabled:opacity-50"
                 >
                   {createMutation.isPending ? 'Creating...' : 'Create'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {editingUser && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-xl">
+            <h3 className="text-lg font-semibold">Edit User</h3>
+            <p className="mb-5 mt-1 text-sm text-muted-foreground">
+              Update the user&apos;s basic information.
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                editMutation.mutate();
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="mb-1 block text-sm font-medium">Display Name</label>
+                <input
+                  type="text"
+                  value={editForm.display_name}
+                  onChange={(e) => setEditForm((f) => ({ ...f, display_name: e.target.value }))}
+                  className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">Role</label>
+                <select
+                  value={editForm.role}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, role: e.target.value as 'admin' | 'user' }))
+                  }
+                  className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editMutation.isPending}
+                  className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground hover:opacity-90 disabled:opacity-50"
+                >
+                  {editMutation.isPending ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </form>
