@@ -41,9 +41,9 @@ availableSecrets:
       env: VITE_SUPABASE_ANON_KEY_SECRET
 
 substitutions:
-  _VITE_API_URL: 'https://monabit-backend-290867308628.us-central1.run.app'
-  _VITE_SUPABASE_URL: 'https://xsnwzthikalbdkquidyi.supabase.co'
-  _VITE_WS_URL: 'wss://monabit-backend-290867308628.us-central1.run.app/ws/prices'
+  _VITE_API_URL: 'https://your-backend-url.run.app'
+  _VITE_SUPABASE_URL: 'https://your-project-ref.supabase.co'
+  _VITE_WS_URL: 'wss://your-backend-url.run.app/ws/prices'
 
 options:
   logging: CLOUD_LOGGING_ONLY

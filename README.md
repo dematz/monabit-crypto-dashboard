@@ -4,9 +4,9 @@ Fullstack web application for consulting, visualizing, and managing cryptocurren
 
 **Live URLs:**
 
-- Frontend: `https://monabit-frontend-290867308628.us-central1.run.app`
-- Backend: `https://monabit-backend-290867308628.us-central1.run.app`
-- Health: `https://monabit-backend-290867308628.us-central1.run.app/health`
+- Frontend: `https://monabit-frontend-XXXXX.us-central1.run.app`
+- Backend: `https://monabit-backend-XXXXX.us-central1.run.app`
+- Health: `https://monabit-backend-XXXXX.us-central1.run.app/health`
 
 ---
 
@@ -308,8 +308,8 @@ Deployed via `scripts/deploy.sh` (in `.gitignore`):
 
 Set in Dashboard → Authentication → URL Configuration:
 
-- **Site URL**: `https://monabit-frontend-290867308628.us-central1.run.app`
-- **Redirect URLs**: `https://monabit-frontend-290867308628.us-central1.run.app/**`
+- **Site URL**: `https://monabit-frontend-XXXXX.us-central1.run.app`
+- **Redirect URLs**: `https://monabit-frontend-XXXXX.us-central1.run.app/**`
 
 ---
 
