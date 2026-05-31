@@ -1,6 +1,11 @@
 import 'dotenv/config';
 import { z } from 'zod';
 
+const boolish = z
+  .string()
+  .default('true')
+  .transform((v) => v === 'true');
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(4000),
@@ -12,7 +17,7 @@ const envSchema = z.object({
   COINGECKO_API_URL: z.string().default('https://api.coingecko.com/api/v3'),
   COINGECKO_API_KEY: z.string().default(''),
   ALLOWED_ORIGINS: z.string().default('http://localhost:3000'),
-  MOCK_CRYPTO: z.coerce.boolean().default(true),
+  MOCK_CRYPTO: boolish.default('true'),
   CACHE_TTL_TOP10: z.coerce.number().default(60),
   CACHE_TTL_MARKET_OVERVIEW: z.coerce.number().default(120),
   CACHE_TTL_COIN_HISTORY: z.coerce.number().default(300),

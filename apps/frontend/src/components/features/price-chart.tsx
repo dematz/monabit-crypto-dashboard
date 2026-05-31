@@ -8,6 +8,7 @@ import { useChartColors } from '@/hooks/use-chart-colors';
 import { useTop10Crypto } from '@/hooks/use-top10-crypto';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CryptoIcon } from '@/components/ui/crypto-icon';
 import { LazyAreaChart } from './recharts-area-chart';
 
 const RANGES = ['1D', '7D', '1M'] as const;
@@ -37,9 +38,7 @@ export function PriceChart() {
     <div className="rounded-2xl border border-border bg-surface p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="grid h-11 w-11 place-items-center rounded-xl bg-accent text-xl font-semibold">
-            {asset?.logo ?? '?'}
-          </div>
+          <CryptoIcon src={asset?.logo ?? '?'} symbol={asset?.symbol ?? ''} size="lg" />
           <div>
             <div className="flex items-center gap-2">
               <select

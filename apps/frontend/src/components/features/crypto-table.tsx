@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChangeIndicator } from '@/components/ui/change-indicator';
 import { SearchInput } from '@/components/ui/search-input';
+import { CryptoIcon } from '@/components/ui/crypto-icon';
 import { AlertModal } from './alert-modal';
 import { type DisplayCryptoAsset } from '@/types';
 import { Sparkline } from './recharts-sparkline';
@@ -150,9 +151,7 @@ export function CryptoTable() {
                       <td className="px-4 py-3 text-muted-foreground tabular-nums">{a.rank}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="grid h-9 w-9 place-items-center rounded-full bg-accent text-base font-semibold">
-                            {a.logo}
-                          </div>
+                          <CryptoIcon src={a.logo} symbol={a.symbol} />
                           <div>
                             <p className="font-medium">{a.name}</p>
                             <p className="text-xs text-muted-foreground">{a.symbol}</p>

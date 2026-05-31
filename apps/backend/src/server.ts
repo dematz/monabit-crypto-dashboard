@@ -14,6 +14,21 @@ import { wsModule } from './modules/crypto/ws.routes.js';
 import { errorHandler } from './shared/errors/index.js';
 import { auditLog } from './shared/audit/index.js';
 import { shutdownBinance } from './modules/crypto/binance-ws.js';
+import { getTop10, getMarketOverview } from './modules/crypto/crypto.service.js';
+
+async function warmupCache() {
+  if (config.MOCK_CRYPTO) {
+    logger.info('Cache warmup: skipping (MOCK_CRYPTO=true)');
+    return;
+  }
+  try {
+    logger.info('Cache warmup: fetching top10 + market-overview from CoinGecko...');
+    await Promise.allSettled([getTop10(), getMarketOverview()]);
+    logger.info('Cache warmup: complete');
+  } catch {
+    logger.warn('Cache warmup: partial failure (will retry on first request)');
+  }
+}
 
 async function main() {
   const app = Fastify({
@@ -48,6 +63,8 @@ async function main() {
 
   const address = await app.listen({ port: config.PORT, host: '0.0.0.0' });
   logger.info({ address, mockCrypto: config.MOCK_CRYPTO }, 'Server started');
+
+  warmupCache();
 
   const shutdown = async () => {
     logger.info('Shutting down...');
