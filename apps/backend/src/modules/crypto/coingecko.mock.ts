@@ -1,12 +1,28 @@
 import type { CryptoAsset, MarketOverview, PricePoint } from '@monabit/shared-types';
 
-function seed(base: number, vol: number, points: number, n: number): PricePoint[] {
+function seed(
+  base: number,
+  vol: number,
+  points: number,
+  n: number,
+  range: '1D' | '7D' | '1M',
+): PricePoint[] {
   const out: PricePoint[] = [];
   let v = base;
+  const now = Date.now();
+  const msPerPoint = range === '1D' ? 3600000 : 3600000;
   for (let i = 0; i < points; i++) {
     const r = Math.sin(i * 0.6 + n) + Math.cos(i * 0.27 + n * 1.7);
     v = Math.max(base * 0.6, v + r * vol);
-    const label = `${i + 1}`;
+    const d = new Date(now - (points - 1 - i) * msPerPoint);
+    let label: string;
+    if (range === '1D') {
+      label = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    } else if (range === '7D') {
+      label = d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
+    } else {
+      label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
     out.push({ t: label, price: Number(v.toFixed(2)) });
   }
   return out;
@@ -29,7 +45,7 @@ export function mockCoinHistory(coinId: string, range: '1D' | '7D' | '1M'): Pric
   const s = HISTORY_SEED[coinId] ?? { base: 100, vol: 2 };
   const points = range === '1D' ? 24 : range === '7D' ? 168 : 720;
   const volMultiplier = range === '1D' ? 0.008 : range === '7D' ? 0.02 : 0.04;
-  return seed(s.base, s.base * volMultiplier, points, s.base);
+  return seed(s.base, s.base * volMultiplier, points, s.base, range);
 }
 
 export const mockTop10: CryptoAsset[] = [

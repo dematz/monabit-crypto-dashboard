@@ -4,6 +4,8 @@ import { fetchTop10, fetchCoinHistory } from '@/services/crypto-api';
 import { toDisplayAsset } from '@/types';
 import { formatCurrency } from '@/lib/format';
 import { useAppStore } from '@/stores/app-store';
+import { useRefreshMs } from '@/hooks/use-refresh-ms';
+import { useChartColors } from '@/hooks/use-chart-colors';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LazyAreaChart } from './recharts-area-chart';
@@ -13,6 +15,7 @@ type Range = (typeof RANGES)[number];
 
 export function PriceChart() {
   const currency = useAppStore((s) => s.currency);
+  const refreshMs = useRefreshMs();
   const [assetId, setAssetId] = useState('bitcoin');
   const [range, setRange] = useState<Range>('7D');
 
@@ -22,7 +25,7 @@ export function PriceChart() {
       const res = await fetchTop10();
       return res.data.map((a, i) => toDisplayAsset(a, i));
     },
-    staleTime: 60_000,
+    staleTime: refreshMs,
   });
 
   const asset = useMemo(() => assets?.find((a) => a.id === assetId), [assets, assetId]);
@@ -30,11 +33,12 @@ export function PriceChart() {
   const { data: history, isLoading } = useQuery({
     queryKey: ['price-history', assetId, range],
     queryFn: () => fetchCoinHistory(assetId, range),
-    staleTime: 30_000,
+    staleTime: Math.round(refreshMs / 2),
   });
 
   const positive = (asset?.change24h ?? 0) >= 0;
-  const stroke = positive ? 'var(--color-success)' : 'var(--color-danger)';
+  const colors = useChartColors();
+  const stroke = positive ? colors.success : colors.danger;
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-5">
@@ -58,16 +62,18 @@ export function PriceChart() {
               </select>
             </div>
             <p className="text-2xl font-semibold tabular-nums">
-              {formatCurrency(asset?.price ?? 0, currency)}{' '}
-              <span
-                className={cn(
-                  'ml-2 text-sm font-medium',
-                  positive ? 'text-success' : 'text-danger',
-                )}
-              >
-                {asset && asset.change24h >= 0 ? '+' : ''}
-                {asset?.change24h.toFixed(2)}%
-              </span>
+              {asset ? formatCurrency(asset.price, currency) : '—'}{' '}
+              {asset && (
+                <span
+                  className={cn(
+                    'ml-2 text-sm font-medium',
+                    positive ? 'text-success' : 'text-danger',
+                  )}
+                >
+                  {asset.change24h > 0 ? '+' : ''}
+                  {asset.change24h.toFixed(2)}%
+                </span>
+              )}
             </p>
           </div>
         </div>

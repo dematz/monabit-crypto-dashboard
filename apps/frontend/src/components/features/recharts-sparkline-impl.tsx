@@ -1,4 +1,5 @@
 import { Line, LineChart, ResponsiveContainer } from 'recharts';
+import { useChartColors } from '@/hooks/use-chart-colors';
 
 type SparklineProps = {
   data: number[];
@@ -6,6 +7,8 @@ type SparklineProps = {
 };
 
 export function SparklineImpl({ data, positive }: SparklineProps) {
+  const colors = useChartColors();
+
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart
@@ -15,7 +18,7 @@ export function SparklineImpl({ data, positive }: SparklineProps) {
         <Line
           type="monotone"
           dataKey="v"
-          stroke={positive ? 'var(--color-success)' : 'var(--color-danger)'}
+          stroke={positive ? colors.success : colors.danger}
           strokeWidth={1.6}
           dot={false}
           isAnimationActive={false}

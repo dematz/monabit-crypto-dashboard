@@ -14,8 +14,9 @@ supabase/.temp
 supabase/.branches
 supabase/volumes
 
-# Docker env files with secrets (use .env.docker as template only)
+# Docker env files with secrets (use .env.docker.template)
 infra/docker/.env
+infra/docker/.env.docker
 
 # Deployment scripts (contains GCP project-specific configuration)
 scripts/deploy.sh

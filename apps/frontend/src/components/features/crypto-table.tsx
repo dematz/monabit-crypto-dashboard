@@ -4,6 +4,7 @@ import { ArrowDownRight, ArrowUpRight, Bell, Search, Star } from 'lucide-react';
 import { fetchTop10 } from '@/services/crypto-api';
 import { formatCompact, formatCurrency } from '@/lib/format';
 import { useAppStore } from '@/stores/app-store';
+import { useRefreshMs } from '@/hooks/use-refresh-ms';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertModal } from './alert-modal';
@@ -29,6 +30,7 @@ export function CryptoTable() {
   const currency = useAppStore((s) => s.currency);
   const favorites = useAppStore((s) => s.favorites);
   const toggleFavorite = useAppStore((s) => s.toggleFavorite);
+  const refreshMs = useRefreshMs();
   const { livePrices } = useBinanceWs();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
@@ -40,7 +42,7 @@ export function CryptoTable() {
       const res = await fetchTop10();
       return res.data.map((a, i) => toDisplayAsset(a, i));
     },
-    refetchInterval: 60_000,
+    refetchInterval: refreshMs,
   });
 
   const rows = useMemo(() => {

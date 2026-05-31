@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import type { PricePoint } from '@monabit/shared-types';
 import { formatCurrency } from '@/lib/format';
+import { useChartColors } from '@/hooks/use-chart-colors';
 
 type AreaChartProps = {
   data: PricePoint[];
@@ -18,6 +19,8 @@ type AreaChartProps = {
 };
 
 export function AreaChartImpl({ data, stroke, symbol, currency }: AreaChartProps) {
+  const colors = useChartColors();
+
   return (
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
@@ -27,32 +30,34 @@ export function AreaChartImpl({ data, stroke, symbol, currency }: AreaChartProps
             <stop offset="100%" stopColor={stroke} stopOpacity={0.08} />
           </linearGradient>
         </defs>
-        <CartesianGrid stroke="var(--color-border)" strokeDasharray="4 4" vertical={false} />
+        <CartesianGrid stroke={colors.border} strokeDasharray="4 4" vertical={false} />
         <XAxis
           dataKey="t"
-          stroke="var(--color-muted-foreground)"
+          stroke={colors.border}
+          tick={{ fill: colors.foreground, fontSize: 11 }}
           tickLine={false}
           axisLine={false}
-          fontSize={11}
+          interval="preserveStartEnd"
+          minTickGap={40}
         />
         <YAxis
-          stroke="var(--color-muted-foreground)"
+          stroke={colors.border}
+          tick={{ fill: colors.foreground, fontSize: 11 }}
           tickLine={false}
           axisLine={false}
-          fontSize={11}
-          width={60}
+          width={80}
           domain={['dataMin', 'dataMax']}
           tickFormatter={(v: number) => formatCurrency(v, currency)}
         />
         <Tooltip
           contentStyle={{
-            background: 'var(--color-popover)',
-            border: '1px solid var(--color-border)',
+            background: colors.popover,
+            border: `1px solid ${colors.border}`,
             borderRadius: 12,
-            color: 'var(--color-popover-foreground)',
+            color: colors.popoverForeground,
             fontSize: 12,
           }}
-          labelStyle={{ color: 'var(--color-muted-foreground)' }}
+          labelStyle={{ color: colors.mutedForeground }}
           formatter={(v: number) => [formatCurrency(v, currency), symbol]}
         />
         <Area

@@ -26,6 +26,16 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
     return reply.status(401).send({ error: 'Invalid or expired token' });
   }
 
+  const { data: profile } = await getSupabaseAdmin()
+    .from('user_profiles')
+    .select('is_active')
+    .eq('id', user.id)
+    .single();
+
+  if (profile && profile.is_active === false) {
+    return reply.status(403).send({ error: 'Account is deactivated. Contact an administrator.' });
+  }
+
   const roleParse = roleSchema.safeParse(user.user_metadata.role);
 
   request.user = {

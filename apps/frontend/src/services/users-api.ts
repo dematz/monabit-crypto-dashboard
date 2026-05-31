@@ -15,6 +15,12 @@ export function deactivateUser(id: string) {
   return api.delete(`/users/${id}`).then((data) => userProfileSchema.parse(data));
 }
 
+export function toggleUserStatus(id: string, isActive: boolean) {
+  return api
+    .patch(`/users/${id}`, { is_active: isActive })
+    .then((data) => userProfileSchema.parse(data));
+}
+
 export function fetchPreferences() {
   return api.get('/users/me/preferences').then((data) => userPreferencesSchema.parse(data));
 }

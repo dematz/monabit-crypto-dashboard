@@ -127,7 +127,7 @@ export function AiAssistant() {
           <div>
             <p className="text-sm font-semibold">MonaBit Assistant</p>
             <p className="text-xs text-muted-foreground">
-              Market AI · {user ? 'Ollama' : 'Simulated'}
+              Market AI · {user ? 'Groq' : 'Simulated'}
             </p>
           </div>
         </div>

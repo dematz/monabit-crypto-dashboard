@@ -51,10 +51,19 @@ export async function getCoinHistory(
     `${config.COINGECKO_API_URL}/coins/${coinId}/market_chart`,
     { params: { vs_currency: 'usd', days } },
   );
-  const points: PricePoint[] = data.prices.map(([_ts, price], i) => ({
-    t: range === '1D' ? `${String(i).padStart(2, '0')}:00` : `D${i + 1}`,
-    price,
-  }));
+  const points: PricePoint[] = data.prices.map(([ts, price]) => {
+    const d = new Date(ts);
+    if (range === '1D') {
+      return {
+        t: d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        price,
+      };
+    }
+    if (range === '7D') {
+      return { t: d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }), price };
+    }
+    return { t: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), price };
+  });
   setCache(cacheKey, points);
   return { data: points, cached: false };
 }

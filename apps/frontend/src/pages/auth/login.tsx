@@ -6,9 +6,31 @@ import { useAppStore } from '@/stores/app-store';
 import { supabase } from '@/services/supabase';
 import { api } from '@/services/api';
 
+async function fetchProfile(token: string) {
+  try {
+    const { user, profile } = await api.get<{
+      user: { id: string; email: string; role: 'admin' | 'user' };
+      profile: { display_name: string | null } | null;
+    }>('/auth/me');
+    useAppStore.getState().setSession(
+      {
+        id: user.id,
+        name: profile?.display_name ?? user.email.split('@')[0] ?? 'User',
+        email: user.email,
+        role: user.role === 'admin' ? 'Admin' : 'User',
+      },
+      token,
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '';
+    if (message.includes('deactivated') || message.includes('403')) {
+      toast.error('Your account has been deactivated. Contact an administrator.');
+    }
+  }
+}
+
 export function LoginPage() {
   const navigate = useNavigate();
-  const setSession = useAppStore((s) => s.setSession);
   const existingUser = useAppStore((s) => s.user);
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
@@ -50,22 +72,6 @@ export function LoginPage() {
       clearTimeout(timer);
     };
   }, []);
-
-  async function fetchProfile(token: string) {
-    const { user, profile } = await api.get<{
-      user: { id: string; email: string; role: 'admin' | 'user' };
-      profile: { display_name: string | null } | null;
-    }>('/auth/me');
-    setSession(
-      {
-        id: user.id,
-        name: profile?.display_name ?? user.email.split('@')[0] ?? 'User',
-        email: user.email,
-        role: user.role === 'admin' ? 'Admin' : 'User',
-      },
-      token,
-    );
-  }
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,7 +126,7 @@ export function LoginPage() {
               'radial-gradient(60% 50% at 20% 20%, oklch(0.82 0.22 152 / 0.18), transparent 60%), radial-gradient(40% 40% at 80% 80%, oklch(0.7 0.22 230 / 0.18), transparent 60%)',
           }}
         />
-        <div className="relative">
+        <div className="relative text-white">
           <div className="flex items-center gap-2.5">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand text-brand-foreground">
               <Bitcoin className="h-5 w-5" />
@@ -133,7 +139,7 @@ export function LoginPage() {
             Crypto market intelligence,{' '}
             <span className="text-gradient-brand">all in one screen.</span>
           </h2>
-          <p className="mt-4 max-w-sm text-sm text-muted-foreground">
+          <p className="mt-4 max-w-sm text-sm text-white/70">
             Live KPIs, smart alerts, premium charts, and an AI assistant at your fingertips.
           </p>
         </div>

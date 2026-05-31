@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Menu, X, Sun, Moon, Search } from 'lucide-react';
+import { Menu, X, Sun, Moon } from 'lucide-react';
 import { AppSidebar } from './app-sidebar';
 import { AiAssistant } from '@/components/features/ai-assistant';
 import { useAppStore } from '@/stores/app-store';
@@ -53,14 +53,6 @@ export function AppShellLayout() {
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-
-          <div className="relative hidden flex-1 max-w-md md:block">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              placeholder="Search assets, alerts, users..."
-              className="h-10 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
 
           <div className="ml-auto flex items-center gap-2">
             <button

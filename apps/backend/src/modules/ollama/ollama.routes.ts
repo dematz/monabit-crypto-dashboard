@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { authenticate } from '../auth/auth.middleware.js';
-import { askOllama } from './ollama.service.js';
+import { askGroq } from './groq.service.js';
 import { z } from 'zod';
 
 const askSchema = z.object({
@@ -10,7 +10,7 @@ const askSchema = z.object({
 export async function ollamaModule(app: FastifyInstance) {
   app.post('/ollama/ask', { preHandler: [authenticate] }, async (request) => {
     const { question } = askSchema.parse(request.body);
-    const answer = await askOllama(question);
+    const answer = await askGroq(question);
     return { question, answer };
   });
 }

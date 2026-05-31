@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MoreHorizontal, Pencil, Plus, Power, Search, ShieldCheck } from 'lucide-react';
+import { MoreHorizontal, Power, UserCheck, Search, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { fetchUsers, deactivateUser } from '@/services/users-api';
+import { fetchUsers, toggleUserStatus } from '@/services/users-api';
 import { useAppStore } from '@/stores/app-store';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -25,13 +25,15 @@ export function UsersPage() {
     queryFn: fetchUsers,
   });
 
-  const deactivateMutation = useMutation({
-    mutationFn: deactivateUser,
-    onSuccess: () => {
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      toggleUserStatus(id, isActive),
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('User deactivated');
+      toast.success(variables.isActive ? 'User activated' : 'User deactivated');
     },
-    onError: () => toast.error('Failed to deactivate user'),
+    onError: (_err, variables) =>
+      toast.error(variables.isActive ? 'Failed to activate user' : 'Failed to deactivate user'),
   });
 
   const rows = useMemo(() => {
@@ -86,12 +88,6 @@ export function UsersPage() {
             Manage members, roles, and platform permissions.
           </p>
         </div>
-        <button
-          onClick={() => toast.message('Demo: simulated user creation')}
-          className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground hover:opacity-90"
-        >
-          <Plus className="h-4 w-4" /> New user
-        </button>
       </div>
 
       <div className="rounded-2xl border border-border bg-surface">
@@ -187,13 +183,19 @@ export function UsersPage() {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-44">
-                            <DropdownMenuItem onClick={() => toast.message('Edit: pending')}>
-                              <Pencil className="mr-2 h-4 w-4" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => deactivateMutation.mutate(u.id)}>
-                              <Power className="mr-2 h-4 w-4" />
-                              {u.status === 'Active' ? 'Deactivate' : 'Activate'}
-                            </DropdownMenuItem>
+                            {u.status === 'Active' ? (
+                              <DropdownMenuItem
+                                onClick={() => toggleMutation.mutate({ id: u.id, isActive: false })}
+                              >
+                                <Power className="mr-2 h-4 w-4" /> Deactivate
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                onClick={() => toggleMutation.mutate({ id: u.id, isActive: true })}
+                              >
+                                <UserCheck className="mr-2 h-4 w-4" /> Activate
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>

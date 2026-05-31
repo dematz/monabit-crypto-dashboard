@@ -16,8 +16,7 @@ const envSchema = z.object({
   CACHE_TTL_TOP10: z.coerce.number().default(60),
   CACHE_TTL_MARKET_OVERVIEW: z.coerce.number().default(120),
   CACHE_TTL_COIN_HISTORY: z.coerce.number().default(300),
-  OLLAMA_HOST: z.string().default('http://localhost:11434'),
-  OLLAMA_MODEL: z.string().default('llama3.2'),
+  GROQ_API_KEY: z.string().default(''),
   BINANCE_WS_URL: z.string().default('wss://stream.binance.com:9443'),
 });
 

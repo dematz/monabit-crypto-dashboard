@@ -5,15 +5,17 @@ import { CryptoTable } from '@/components/features/crypto-table';
 import { fetchMarketOverview } from '@/services/crypto-api';
 import { formatCompact } from '@/lib/format';
 import { useAppStore } from '@/stores/app-store';
+import { useRefreshMs } from '@/hooks/use-refresh-ms';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function DashboardPage() {
   const currency = useAppStore((s) => s.currency);
+  const refreshMs = useRefreshMs();
 
   const { data: market, isLoading } = useQuery({
     queryKey: ['market-overview'],
     queryFn: fetchMarketOverview,
-    refetchInterval: 120_000,
+    refetchInterval: refreshMs,
   });
 
   return (

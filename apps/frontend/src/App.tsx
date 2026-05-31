@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'sonner';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { Toaster, toast } from 'sonner';
+import { lazy, Suspense, useEffect, useState, startTransition } from 'react';
 import { ThemeManager } from '@/components/theme-manager';
 import { AppShellLayout } from '@/components/layout/app-shell';
 import { useAppStore } from '@/stores/app-store';
@@ -41,8 +41,12 @@ async function fetchProfile(token: string) {
       },
       token,
     );
-  } catch {
-    // token invalid — user will be redirected to login
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '';
+    if (message.includes('deactivated') || message.includes('403')) {
+      toast.error('Your account has been deactivated. Contact an administrator.');
+      useAppStore.getState().logout();
+    }
   }
 }
 
@@ -52,7 +56,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (user) {
-      setWaiting(false);
+      startTransition(() => setWaiting(false));
       return;
     }
     if (!waiting) return;

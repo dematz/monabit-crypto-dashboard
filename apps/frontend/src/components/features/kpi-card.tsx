@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
+import { useChartColors } from '@/hooks/use-chart-colors';
 
 type Props = {
   label: string;
@@ -12,12 +13,13 @@ type Props = {
 
 export function KpiCard({ label, value, change, spark, accent = 'brand' }: Props) {
   const positive = change >= 0;
+  const colors = useChartColors();
   const stroke =
     accent === 'info'
-      ? 'var(--color-chart-2)'
+      ? 'oklch(0.7 0.18 220)'
       : accent === 'warning'
-        ? 'var(--color-chart-3)'
-        : 'var(--color-success)';
+        ? 'oklch(0.7 0.2 35)'
+        : colors.success;
   const data = spark.map((v, i) => ({ i, v }));
 
   return (
@@ -41,26 +43,28 @@ export function KpiCard({ label, value, change, spark, accent = 'brand' }: Props
           {Math.abs(change).toFixed(2)}%
         </span>
       </div>
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 opacity-80">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-            <defs>
-              <linearGradient id={`spark-${label}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={stroke} stopOpacity={0.5} />
-                <stop offset="100%" stopColor={stroke} stopOpacity={0.08} />
-              </linearGradient>
-            </defs>
-            <Area
-              type="monotone"
-              dataKey="v"
-              stroke={stroke}
-              strokeWidth={2}
-              fill={`url(#spark-${label})`}
-              isAnimationActive={false}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
+      {spark.length > 0 && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 opacity-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+              <defs>
+                <linearGradient id={`spark-${label}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={stroke} stopOpacity={0.5} />
+                  <stop offset="100%" stopColor={stroke} stopOpacity={0.08} />
+                </linearGradient>
+              </defs>
+              <Area
+                type="monotone"
+                dataKey="v"
+                stroke={stroke}
+                strokeWidth={2}
+                fill={`url(#spark-${label})`}
+                isAnimationActive={false}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 }
