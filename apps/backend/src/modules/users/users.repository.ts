@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '../../lib/supabase.js';
+import { HttpError } from '../../shared/errors/index.js';
 import type { UpdateUserInput, CreateUserInput } from './users.schema.js';
 
 export async function listUsers() {
@@ -65,6 +66,7 @@ export async function updateUser(id: string, input: UpdateUserInput) {
     .eq('id', id)
     .select()
     .single();
+  if (!data) throw new HttpError(404, 'User not found');
   return data;
 }
 
@@ -75,5 +77,6 @@ export async function deactivateUser(id: string) {
     .eq('id', id)
     .select()
     .single();
+  if (!data) throw new HttpError(404, 'User not found');
   return data;
 }
