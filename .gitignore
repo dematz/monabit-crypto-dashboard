@@ -2,6 +2,7 @@ node_modules
 dist
 .env
 .env.local
+.env.*.local
 *.log
 .DS_Store
 coverage
@@ -12,3 +13,6 @@ coverage
 supabase/.temp
 supabase/.branches
 supabase/volumes
+
+# Docker env files with secrets (use .env.docker as template only)
+infra/docker/.env
