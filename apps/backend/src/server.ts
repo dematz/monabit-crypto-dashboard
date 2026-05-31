@@ -8,6 +8,7 @@ import { healthRoute } from './shared/health/index.js';
 import { authModule } from './modules/auth/auth.routes.js';
 import { usersModule } from './modules/users/users.routes.js';
 import { cryptoModule } from './modules/crypto/crypto.routes.js';
+import { ollamaModule } from './modules/ollama/ollama.routes.js';
 import { errorHandler } from './shared/errors/index.js';
 import { auditLog } from './shared/audit/index.js';
 
@@ -37,6 +38,7 @@ async function main() {
   await app.register(authModule);
   await app.register(usersModule);
   await app.register(cryptoModule);
+  await app.register(ollamaModule);
 
   const address = await app.listen({ port: config.PORT, host: '0.0.0.0' });
   logger.info({ address, mockCrypto: config.MOCK_CRYPTO }, 'Server started');

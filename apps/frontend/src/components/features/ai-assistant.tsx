@@ -4,6 +4,7 @@ import { useAppStore } from '@/stores/app-store';
 import { CRYPTO_ASSETS } from '@/lib/mock-data';
 import { formatCompact, formatCurrency, formatPercent } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { askOllama } from '@/services/ollama-api';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 
@@ -14,7 +15,7 @@ const SUGGESTIONS = [
   'Top 3 gainers 24h',
 ];
 
-function generateReply(input: string, currency: 'USD' | 'EUR'): string {
+function generateFallback(input: string, currency: 'USD' | 'EUR'): string {
   const q = input.toLowerCase();
   const top = [...CRYPTO_ASSETS].sort((a, b) => b.change24h - a.change24h);
   const gainers = top.slice(0, 3);
@@ -25,7 +26,7 @@ function generateReply(input: string, currency: 'USD' | 'EUR'): string {
       '**Market summary**',
       `• Bitcoin is trading at ${formatCurrency(CRYPTO_ASSETS[0]!.price, currency)} (${formatPercent(CRYPTO_ASSETS[0]!.change24h)} 24h).`,
       `• Ethereum at ${formatCurrency(CRYPTO_ASSETS[1]!.price, currency)} (${formatPercent(CRYPTO_ASSETS[1]!.change24h)} 24h).`,
-      `• Overall sentiment: ${gainers.length > losers.length ? 'bullish 🟢' : 'bearish 🔴'}.`,
+      `• Overall sentiment: ${gainers.length > losers.length ? 'bullish' : 'bearish'}.`,
       `• Top gainer: **${gainers[0]!.symbol}** ${formatPercent(gainers[0]!.change24h)}.`,
     ].join('\n');
   }
@@ -45,10 +46,10 @@ function generateReply(input: string, currency: 'USD' | 'EUR'): string {
   if (match) {
     return [
       `**${match.name} (${match.symbol})**`,
-      `• Precio: ${formatCurrency(match.price, currency)}`,
+      `• Price: ${formatCurrency(match.price, currency)}`,
       `• 24h: ${formatPercent(match.change24h)}`,
       `• Market Cap: ${formatCompact(match.marketCap, currency)}`,
-      `• Volumen 24h: ${formatCompact(match.volume24h, currency)}`,
+      `• Volume 24h: ${formatCompact(match.volume24h, currency)}`,
       match.change24h >= 0 ? 'Upward trend in the last 24h.' : 'Downward trend in the last 24h.',
     ].join('\n');
   }
@@ -59,6 +60,7 @@ export function AiAssistant() {
   const open = useAppStore((s) => s.aiOpen);
   const setOpen = useAppStore((s) => s.setAiOpen);
   const currency = useAppStore((s) => s.currency);
+  const user = useAppStore((s) => s.user);
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: 'assistant',
@@ -74,16 +76,39 @@ export function AiAssistant() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, typing]);
 
-  const send = (text: string) => {
+  const send = async (text: string) => {
     const value = text.trim();
     if (!value) return;
     setMessages((m) => [...m, { role: 'user', content: value }]);
     setInput('');
     setTyping(true);
-    setTimeout(() => {
-      setMessages((m) => [...m, { role: 'assistant', content: generateReply(value, currency) }]);
+
+    try {
+      if (user) {
+        const res = await askOllama(value);
+        setMessages((m) => [...m, { role: 'assistant', content: res.answer }]);
+      } else {
+        setTimeout(() => {
+          setMessages((m) => [
+            ...m,
+            { role: 'assistant', content: generateFallback(value, currency) },
+          ]);
+          setTyping(false);
+        }, 600);
+        return;
+      }
+    } catch {
+      setMessages((m) => [
+        ...m,
+        {
+          role: 'assistant',
+          content:
+            generateFallback(value, currency) + '\n\n_(Offline — showing simulated response)_',
+        },
+      ]);
+    } finally {
       setTyping(false);
-    }, 600);
+    }
   };
 
   return (
@@ -101,7 +126,9 @@ export function AiAssistant() {
           </div>
           <div>
             <p className="text-sm font-semibold">MonaBit Assistant</p>
-            <p className="text-xs text-muted-foreground">Market AI · simulated</p>
+            <p className="text-xs text-muted-foreground">
+              Market AI · {user ? 'Ollama' : 'Simulated'}
+            </p>
           </div>
         </div>
         <button

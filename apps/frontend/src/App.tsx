@@ -1,13 +1,19 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
+import { lazy, Suspense } from 'react';
 import { ThemeManager } from '@/components/theme-manager';
 import { AppShellLayout } from '@/components/layout/app-shell';
-import { LoginPage } from '@/pages/auth/login';
-import { DashboardPage } from '@/pages/dashboard';
-import { SettingsPage } from '@/pages/settings';
-import { UsersPage } from '@/pages/users';
 import { useAppStore } from '@/stores/app-store';
+
+const LoginPage = lazy(() => import('@/pages/auth/login').then((m) => ({ default: m.LoginPage })));
+const DashboardPage = lazy(() =>
+  import('@/pages/dashboard').then((m) => ({ default: m.DashboardPage })),
+);
+const SettingsPage = lazy(() =>
+  import('@/pages/settings').then((m) => ({ default: m.SettingsPage })),
+);
+const UsersPage = lazy(() => import('@/pages/users').then((m) => ({ default: m.UsersPage })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,26 +50,36 @@ function NotFoundPage() {
   );
 }
 
+function PageSpinner() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand border-t-transparent" />
+    </div>
+  );
+}
+
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <ThemeManager />
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route
-            element={
-              <ProtectedRoute>
-                <AppShellLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<DashboardPage />} />
-            <Route path="users" element={<UsersPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Route>
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+        <Suspense fallback={<PageSpinner />}>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+              element={
+                <ProtectedRoute>
+                  <AppShellLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<DashboardPage />} />
+              <Route path="users" element={<UsersPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
         <Toaster richColors position="top-right" />
       </BrowserRouter>
     </QueryClientProvider>
