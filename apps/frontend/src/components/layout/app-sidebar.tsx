@@ -1,18 +1,11 @@
-import { Link, useLocation } from "react-router-dom";
-import {
-  LayoutDashboard,
-  Users,
-  Settings,
-  Sparkles,
-  LogOut,
-  Bitcoin,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useAppStore } from "@/stores/app-store";
-import { Button } from "@/components/ui/button";
+import { Link, useLocation } from 'react-router-dom';
+import { LayoutDashboard, Users, Settings, Sparkles, LogOut, Bitcoin } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useAppStore } from '@/stores/app-store';
+import { Button } from '@/components/ui/button';
 
 type NavItem = {
-  to: "/" | "/users" | "/settings";
+  to: '/' | '/users' | '/settings';
   label: string;
   icon: typeof LayoutDashboard;
   exact?: boolean;
@@ -20,9 +13,9 @@ type NavItem = {
 };
 
 const NAV: NavItem[] = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/users", label: "Usuarios", icon: Users, adminOnly: true },
-  { to: "/settings", label: "Preferencias", icon: Settings },
+  { to: '/', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+  { to: '/users', label: 'Users', icon: Users, adminOnly: true },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
 type Props = { onNavigate?: () => void };
@@ -46,28 +39,26 @@ export function AppSidebar({ onNavigate }: Props) {
       </div>
 
       <nav className="flex-1 space-y-1 px-3">
-        {NAV.filter((n) => !n.adminOnly || user?.role === "Admin").map(
-          (item) => {
-            const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                onClick={onNavigate}
-                className={cn(
-                  "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            );
-          },
-        )}
+        {NAV.filter((n) => !n.adminOnly || user?.role === 'Admin').map((item) => {
+          const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              onClick={onNavigate}
+              className={cn(
+                'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                active
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                  : 'text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              {item.label}
+            </Link>
+          );
+        })}
       </nav>
 
       <div className="space-y-2 border-t border-sidebar-border p-3">
@@ -80,7 +71,7 @@ export function AppSidebar({ onNavigate }: Props) {
           }}
         >
           <Sparkles className="h-4 w-4 text-brand" />
-          Asistente IA
+          AI Assistant
         </Button>
         {user && (
           <div className="flex items-center gap-3 rounded-lg px-3 py-2">
@@ -95,7 +86,7 @@ export function AppSidebar({ onNavigate }: Props) {
               type="button"
               onClick={logout}
               className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-              aria-label="Cerrar sesión"
+              aria-label="Log out"
             >
               <LogOut className="h-4 w-4" />
             </button>

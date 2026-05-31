@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MoreHorizontal, Pencil, Plus, Power, Search, ShieldCheck, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Pencil, Plus, Power, Search, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { fetchUsers, deactivateUser } from '@/services/users-api';
 import { useAppStore } from '@/stores/app-store';
@@ -29,20 +29,20 @@ export function UsersPage() {
     mutationFn: deactivateUser,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Usuario desactivado');
+      toast.success('User deactivated');
     },
-    onError: () => toast.error('Error al desactivar usuario'),
+    onError: () => toast.error('Failed to deactivate user'),
   });
 
   const rows = useMemo(() => {
     const base = users ?? [];
     return base.map((u) => ({
       id: u.id,
-      name: u.display_name ?? u.email?.split('@')[0] ?? 'Sin nombre',
+      name: u.display_name ?? u.email?.split('@')[0] ?? 'No name',
       email: u.email ?? '',
       role: (u.role === 'admin' ? 'Admin' : 'User') as 'Admin' | 'User',
-      status: (u.is_active ? 'Activo' : 'Inactivo') as 'Activo' | 'Inactivo',
-      createdAt: u.created_at ? new Date(u.created_at).toLocaleDateString('es-AR') : '-',
+      status: (u.is_active ? 'Active' : 'Inactive') as 'Active' | 'Inactive',
+      createdAt: u.created_at ? new Date(u.created_at).toLocaleDateString('en-US') : '-',
     }));
   }, [users]);
 
@@ -62,15 +62,15 @@ export function UsersPage() {
       <div className="grid min-h-[60vh] place-items-center">
         <div className="max-w-md rounded-2xl border border-border bg-surface p-8 text-center">
           <ShieldCheck className="mx-auto h-10 w-10 text-brand" />
-          <h2 className="mt-3 text-lg font-semibold">Acceso restringido</h2>
+          <h2 className="mt-3 text-lg font-semibold">Restricted access</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Esta sección está disponible únicamente para administradores.
+            This section is only available to administrators.
           </p>
           <button
             onClick={() => navigate('/')}
             className="mt-5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground"
           >
-            Volver al dashboard
+            Back to Dashboard
           </button>
         </div>
       </div>
@@ -81,16 +81,16 @@ export function UsersPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Gestión de usuarios</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">User Management</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Administrá miembros, roles y permisos de la plataforma.
+            Manage members, roles, and platform permissions.
           </p>
         </div>
         <button
-          onClick={() => toast.message('Demo: alta de usuario simulada')}
+          onClick={() => toast.message('Demo: simulated user creation')}
           className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground hover:opacity-90"
         >
-          <Plus className="h-4 w-4" /> Nuevo usuario
+          <Plus className="h-4 w-4" /> New user
         </button>
       </div>
 
@@ -101,7 +101,7 @@ export function UsersPage() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por nombre o email..."
+              placeholder="Search by name or email..."
               className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -111,12 +111,12 @@ export function UsersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
-                <th className="px-4 py-3">Nombre</th>
+                <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Rol</th>
-                <th className="px-4 py-3">Estado</th>
-                <th className="hidden px-4 py-3 md:table-cell">Alta</th>
-                <th className="px-4 py-3 text-right">Acciones</th>
+                <th className="px-4 py-3">Role</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="hidden px-4 py-3 md:table-cell">Joined</th>
+                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -158,7 +158,7 @@ export function UsersPage() {
                         <span
                           className={cn(
                             'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium',
-                            u.status === 'Activo'
+                            u.status === 'Active'
                               ? 'bg-success/15 text-success'
                               : 'bg-danger/15 text-danger',
                           )}
@@ -166,7 +166,7 @@ export function UsersPage() {
                           <span
                             className={cn(
                               'h-1.5 w-1.5 rounded-full',
-                              u.status === 'Activo' ? 'bg-success' : 'bg-danger',
+                              u.status === 'Active' ? 'bg-success' : 'bg-danger',
                             )}
                           />
                           {u.status}
@@ -181,18 +181,18 @@ export function UsersPage() {
                             <button
                               type="button"
                               className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                              aria-label="Acciones"
+                              aria-label="Actions"
                             >
                               <MoreHorizontal className="h-4 w-4" />
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-44">
-                            <DropdownMenuItem onClick={() => toast.message('Edición: pendiente')}>
-                              <Pencil className="mr-2 h-4 w-4" /> Editar
+                            <DropdownMenuItem onClick={() => toast.message('Edit: pending')}>
+                              <Pencil className="mr-2 h-4 w-4" /> Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => deactivateMutation.mutate(u.id)}>
                               <Power className="mr-2 h-4 w-4" />
-                              {u.status === 'Activo' ? 'Desactivar' : 'Activar'}
+                              {u.status === 'Active' ? 'Deactivate' : 'Activate'}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -202,7 +202,7 @@ export function UsersPage() {
               {!isLoading && filtered.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                    No se encontraron usuarios.
+                    No users found.
                   </td>
                 </tr>
               )}

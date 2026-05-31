@@ -5,9 +5,9 @@ import type { Theme, Currency } from '@/types';
 import { cn } from '@/lib/utils';
 
 const THEMES: { id: Theme; label: string; icon: typeof Sun }[] = [
-  { id: 'light', label: 'Claro', icon: Sun },
-  { id: 'dark', label: 'Oscuro', icon: Moon },
-  { id: 'system', label: 'Sistema', icon: Monitor },
+  { id: 'light', label: 'Light', icon: Sun },
+  { id: 'dark', label: 'Dark', icon: Moon },
+  { id: 'system', label: 'System', icon: Monitor },
 ];
 
 const CURRENCIES: Currency[] = ['USD', 'EUR'];
@@ -23,16 +23,16 @@ export function SettingsPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Preferencias</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Preferences</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Ajustá la experiencia visual y los datos del dashboard.
+          Customize the dashboard visual experience and data display.
         </p>
       </div>
 
       <section className="rounded-2xl border border-border bg-surface p-6">
-        <h2 className="text-sm font-semibold">Tema</h2>
+        <h2 className="text-sm font-semibold">Theme</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Elegí cómo se ve MonaBit. La opción Sistema sigue tu configuración del SO.
+          Choose how MonaBit looks. System follows your OS setting.
         </p>
         <div className="mt-4 grid grid-cols-3 gap-2">
           {THEMES.map((t) => {
@@ -44,7 +44,7 @@ export function SettingsPage() {
                 type="button"
                 onClick={() => {
                   setTheme(t.id);
-                  toast.success(`Tema: ${t.label}`);
+                  toast.success(`Theme: ${t.label}`);
                 }}
                 className={cn(
                   'flex flex-col items-center gap-2 rounded-xl border p-4 text-sm font-medium transition-colors',
@@ -62,9 +62,9 @@ export function SettingsPage() {
       </section>
 
       <section className="rounded-2xl border border-border bg-surface p-6">
-        <h2 className="text-sm font-semibold">Divisa base</h2>
+        <h2 className="text-sm font-semibold">Base Currency</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Moneda para precios, market cap y volumen.
+          Currency for prices, market cap and volume.
         </p>
         <div className="mt-4 inline-flex rounded-lg border border-border bg-background p-1">
           {CURRENCIES.map((c) => (
@@ -88,10 +88,8 @@ export function SettingsPage() {
       <section className="rounded-2xl border border-border bg-surface p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold">Intervalo de actualización</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Frecuencia con la que se refrescan los datos de mercado.
-            </p>
+            <h2 className="text-sm font-semibold">Refresh Interval</h2>
+            <p className="mt-1 text-xs text-muted-foreground">How often market data refreshes.</p>
           </div>
           <span className="rounded-md bg-accent px-2.5 py-1 text-sm font-semibold tabular-nums">
             {refresh}s

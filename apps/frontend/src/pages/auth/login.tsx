@@ -25,9 +25,17 @@ export function LoginPage() {
   }, [existingUser, navigate]);
 
   async function fetchProfile(token: string) {
-    const { user, profile } = await api.get<{ user: { id: string; email: string; role: 'admin' | 'user' }; profile: { display_name: string | null } }>('/auth/me');
+    const { user, profile } = await api.get<{
+      user: { id: string; email: string; role: 'admin' | 'user' };
+      profile: { display_name: string | null };
+    }>('/auth/me');
     setSession(
-      { id: user.id, name: profile?.display_name ?? user.email.split('@')[0] ?? 'Usuario', email: user.email, role: user.role === 'admin' ? 'Admin' : 'User' },
+      {
+        id: user.id,
+        name: profile?.display_name ?? user.email.split('@')[0] ?? 'User',
+        email: user.email,
+        role: user.role === 'admin' ? 'Admin' : 'User',
+      },
       token,
     );
   }
@@ -35,16 +43,20 @@ export function LoginPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || (mode === 'register' && !name)) {
-      toast.error('Completá todos los campos');
+      toast.error('Please fill in all fields');
       return;
     }
     setLoading(true);
     try {
       if (mode === 'register') {
-        const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { display_name: name } } });
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { display_name: name } },
+        });
         if (error) throw error;
         if (!data.session) {
-          toast.success('Revisá tu email para confirmar la cuenta');
+          toast.success('Check your email to confirm your account');
           setLoading(false);
           return;
         }
@@ -54,17 +66,17 @@ export function LoginPage() {
         if (error) throw error;
         await fetchProfile(data.session.access_token);
       }
-      toast.success(mode === 'login' ? 'Bienvenido a MonaBit' : 'Cuenta creada');
+      toast.success(mode === 'login' ? 'Welcome to MonaBit' : 'Account created');
       navigate('/');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error de autenticación');
+      toast.error(err instanceof Error ? err.message : 'Authentication error');
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogle = () => {
-    toast.message('Google Sign-In no disponible en entorno local');
+    toast.message('Google Sign-In is not available in local environment');
   };
 
   return (
@@ -87,12 +99,11 @@ export function LoginPage() {
             </span>
           </div>
           <h2 className="mt-10 max-w-md text-4xl font-semibold leading-tight">
-            La inteligencia del mercado cripto,{' '}
-            <span className="text-gradient-brand">en una sola pantalla.</span>
+            Crypto market intelligence,{' '}
+            <span className="text-gradient-brand">all in one screen.</span>
           </h2>
           <p className="mt-4 max-w-sm text-sm text-muted-foreground">
-            KPIs en vivo, alertas inteligentes, gráficas premium y un asistente IA al alcance
-            de un atajo.
+            Live KPIs, smart alerts, premium charts, and an AI assistant at your fingertips.
           </p>
         </div>
       </div>
@@ -107,12 +118,12 @@ export function LoginPage() {
           </div>
 
           <h1 className="text-2xl font-semibold tracking-tight">
-            {mode === 'login' ? 'Iniciá sesión' : 'Creá tu cuenta'}
+            {mode === 'login' ? 'Sign in' : 'Create your account'}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === 'login'
-              ? 'Accedé a tu dashboard personalizado.'
-              : 'Empezá a monitorear el mercado en segundos.'}
+              ? 'Access your personalized dashboard.'
+              : 'Start monitoring the market in seconds.'}
           </p>
 
           <button
@@ -122,23 +133,23 @@ export function LoginPage() {
             className="mt-6 flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
           >
             <GoogleIcon />
-            Continuar con Google
+            Continue with Google
           </button>
 
           <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
             <div className="h-px flex-1 bg-border" />
-            o con tu email
+            or with your email
             <div className="h-px flex-1 bg-border" />
           </div>
 
           <form onSubmit={submit} className="space-y-3">
             {mode === 'register' && (
-              <Field label="Nombre">
+              <Field label="Name">
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="Tu nombre"
+                  placeholder="Your name"
                 />
               </Field>
             )}
@@ -148,11 +159,11 @@ export function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder="tu@email.com"
+                placeholder="you@email.com"
                 autoComplete="email"
               />
             </Field>
-            <Field label="Contraseña">
+            <Field label="Password">
               <div className="relative">
                 <input
                   type={showPw ? 'text' : 'password'}
@@ -166,7 +177,7 @@ export function LoginPage() {
                   type="button"
                   onClick={() => setShowPw((v) => !v)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                  aria-label={showPw ? 'Ocultar' : 'Mostrar'}
+                  aria-label={showPw ? 'Hide' : 'Show'}
                 >
                   {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -178,22 +189,18 @@ export function LoginPage() {
               disabled={loading}
               className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-lg bg-brand text-sm font-semibold text-brand-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
             >
-              {loading
-                ? 'Procesando...'
-                : mode === 'login'
-                  ? 'Iniciar sesión'
-                  : 'Crear cuenta'}
+              {loading ? 'Processing...' : mode === 'login' ? 'Sign in' : 'Create account'}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            {mode === 'login' ? '¿No tenés cuenta?' : '¿Ya tenés cuenta?'}{' '}
+            {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}{' '}
             <button
               type="button"
               onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
               className="font-semibold text-brand hover:underline"
             >
-              {mode === 'login' ? 'Registrate' : 'Iniciá sesión'}
+              {mode === 'login' ? 'Sign up' : 'Sign in'}
             </button>
           </p>
         </div>

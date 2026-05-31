@@ -19,9 +19,9 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Mercado global</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Global Market</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Una vista panorámica del estado del mercado cripto en tiempo real.
+          A panoramic view of the crypto market in real time.
         </p>
       </div>
 
@@ -42,14 +42,14 @@ export function DashboardPage() {
               accent="brand"
             />
             <KpiCard
-              label="Volumen 24h"
+              label="24h Volume"
               value={formatCompact(market.data.total_volume.usd, currency)}
               change={0}
               spark={[]}
               accent="info"
             />
             <KpiCard
-              label="Dominancia BTC"
+              label="BTC Dominance"
               value={`${market.data.market_cap_percentage.btc.toFixed(2)}%`}
               change={0}
               spark={[]}

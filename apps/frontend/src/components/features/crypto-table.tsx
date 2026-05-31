@@ -1,33 +1,27 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowDownRight,
-  ArrowUpRight,
-  Bell,
-  Search,
-  Star,
-} from "lucide-react";
-import { fetchTop10 } from "@/services/crypto-api";
-import { formatCompact, formatCurrency } from "@/lib/format";
-import { useAppStore } from "@/stores/app-store";
-import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AlertModal } from "./alert-modal";
-import { toDisplayAsset, type DisplayCryptoAsset } from "@/types";
-import { Line, LineChart, ResponsiveContainer } from "recharts";
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowDownRight, ArrowUpRight, Bell, Search, Star } from 'lucide-react';
+import { fetchTop10 } from '@/services/crypto-api';
+import { formatCompact, formatCurrency } from '@/lib/format';
+import { useAppStore } from '@/stores/app-store';
+import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AlertModal } from './alert-modal';
+import { toDisplayAsset, type DisplayCryptoAsset } from '@/types';
+import { Line, LineChart, ResponsiveContainer } from 'recharts';
 
-type Filter = "all" | "favorites" | "gainers" | "losers";
+type Filter = 'all' | 'favorites' | 'gainers' | 'losers';
 
 export function CryptoTable() {
   const currency = useAppStore((s) => s.currency);
   const favorites = useAppStore((s) => s.favorites);
   const toggleFavorite = useAppStore((s) => s.toggleFavorite);
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<Filter>("all");
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<Filter>('all');
   const [alertAsset, setAlertAsset] = useState<DisplayCryptoAsset | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["top-crypto"],
+    queryKey: ['top-crypto'],
     queryFn: async () => {
       const res = await fetchTop10();
       return res.data.map((a, i) => toDisplayAsset(a, i));
@@ -45,28 +39,26 @@ export function CryptoTable() {
           : true,
       )
       .filter((a) => {
-        if (filter === "favorites") return favorites.includes(a.id);
-        if (filter === "gainers") return a.change24h >= 0;
-        if (filter === "losers") return a.change24h < 0;
+        if (filter === 'favorites') return favorites.includes(a.id);
+        if (filter === 'gainers') return a.change24h >= 0;
+        if (filter === 'losers') return a.change24h < 0;
         return true;
       });
   }, [data, query, filter, favorites]);
 
   const filters: { id: Filter; label: string }[] = [
-    { id: "all", label: "Todos" },
-    { id: "favorites", label: "Favoritos" },
-    { id: "gainers", label: "Ganadores" },
-    { id: "losers", label: "Perdedores" },
+    { id: 'all', label: 'All' },
+    { id: 'favorites', label: 'Favorites' },
+    { id: 'gainers', label: 'Gainers' },
+    { id: 'losers', label: 'Losers' },
   ];
 
   return (
     <div className="rounded-2xl border border-border bg-surface">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5">
         <div>
-          <h2 className="text-base font-semibold">Top 10 Criptomonedas</h2>
-          <p className="text-xs text-muted-foreground">
-            Datos actualizados cada 60s desde CoinGecko
-          </p>
+          <h2 className="text-base font-semibold">Top 10 Cryptocurrencies</h2>
+          <p className="text-xs text-muted-foreground">Data updated every 60s from CoinGecko</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
@@ -74,7 +66,7 @@ export function CryptoTable() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar..."
+              placeholder="Search..."
               className="h-9 w-48 rounded-lg border border-border bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -85,10 +77,10 @@ export function CryptoTable() {
                 type="button"
                 onClick={() => setFilter(f.id)}
                 className={cn(
-                  "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                  'rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors',
                   filter === f.id
-                    ? "bg-accent text-foreground"
-                    : "text-muted-foreground hover:text-foreground",
+                    ? 'bg-accent text-foreground'
+                    : 'text-muted-foreground hover:text-foreground',
                 )}
               >
                 {f.label}
@@ -104,13 +96,13 @@ export function CryptoTable() {
             <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
               <th className="w-10 px-4 py-3" />
               <th className="px-4 py-3">#</th>
-              <th className="px-4 py-3">Activo</th>
-              <th className="px-4 py-3 text-right">Precio</th>
+              <th className="px-4 py-3">Asset</th>
+              <th className="px-4 py-3 text-right">Price</th>
               <th className="px-4 py-3 text-right">24h %</th>
               <th className="hidden px-4 py-3 text-right md:table-cell">Market Cap</th>
-              <th className="hidden px-4 py-3 text-right lg:table-cell">Volumen 24h</th>
-              <th className="hidden px-4 py-3 lg:table-cell">Tendencia 7d</th>
-              <th className="px-4 py-3 text-right">Acciones</th>
+              <th className="hidden px-4 py-3 text-right lg:table-cell">24h Volume</th>
+              <th className="hidden px-4 py-3 lg:table-cell">7d Trend</th>
+              <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -135,16 +127,14 @@ export function CryptoTable() {
                           type="button"
                           onClick={() => toggleFavorite(a.id)}
                           className={cn(
-                            "rounded-md p-1.5 transition-colors",
+                            'rounded-md p-1.5 transition-colors',
                             fav
-                              ? "text-yellow-400 hover:bg-yellow-400/10"
-                              : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                              ? 'text-yellow-400 hover:bg-yellow-400/10'
+                              : 'text-muted-foreground hover:bg-accent hover:text-foreground',
                           )}
-                          aria-label={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
+                          aria-label={fav ? 'Remove from favorites' : 'Add to favorites'}
                         >
-                          <Star
-                            className={cn("h-4 w-4", fav && "fill-current")}
-                          />
+                          <Star className={cn('h-4 w-4', fav && 'fill-current')} />
                         </button>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground tabular-nums">{a.rank}</td>
@@ -165,8 +155,8 @@ export function CryptoTable() {
                       <td className="px-4 py-3 text-right">
                         <span
                           className={cn(
-                            "inline-flex items-center gap-1 font-medium tabular-nums",
-                            positive ? "text-success" : "text-danger",
+                            'inline-flex items-center gap-1 font-medium tabular-nums',
+                            positive ? 'text-success' : 'text-danger',
                           )}
                         >
                           {positive ? (
@@ -193,9 +183,7 @@ export function CryptoTable() {
                               <Line
                                 type="monotone"
                                 dataKey="v"
-                                stroke={
-                                  positive ? "var(--color-success)" : "var(--color-danger)"
-                                }
+                                stroke={positive ? 'var(--color-success)' : 'var(--color-danger)'}
                                 strokeWidth={1.6}
                                 dot={false}
                                 isAnimationActive={false}
@@ -209,7 +197,7 @@ export function CryptoTable() {
                           type="button"
                           onClick={() => setAlertAsset(a)}
                           className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                          aria-label="Crear alerta"
+                          aria-label="Create alert"
                         >
                           <Bell className="h-4 w-4" />
                         </button>
@@ -220,7 +208,7 @@ export function CryptoTable() {
             {!isLoading && rows.length === 0 && (
               <tr>
                 <td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                  Sin resultados para los filtros actuales.
+                  No results for current filters.
                 </td>
               </tr>
             )}

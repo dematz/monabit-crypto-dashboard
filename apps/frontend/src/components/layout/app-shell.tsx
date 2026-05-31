@@ -49,7 +49,7 @@ export function AppShellLayout() {
             type="button"
             className="rounded-md p-2 hover:bg-accent lg:hidden"
             onClick={() => setMobileOpen((v) => !v)}
-            aria-label="Abrir menú"
+            aria-label="Open menu"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -57,7 +57,7 @@ export function AppShellLayout() {
           <div className="relative hidden flex-1 max-w-md md:block">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
-              placeholder="Buscar activos, alertas, usuarios..."
+              placeholder="Search assets, alerts, users..."
               className="h-10 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -67,7 +67,7 @@ export function AppShellLayout() {
               type="button"
               onClick={cycleTheme}
               className="rounded-md p-2 hover:bg-accent"
-              aria-label="Cambiar tema"
+              aria-label="Toggle theme"
             >
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
@@ -76,7 +76,7 @@ export function AppShellLayout() {
               onClick={() => setAiOpen(true)}
               className="hidden rounded-md border border-brand/40 bg-brand/10 px-3 py-2 text-xs font-medium text-foreground hover:bg-brand/20 sm:inline-flex"
             >
-              ✨ Asistente IA
+              ✨ AI Assistant
             </button>
           </div>
         </header>
