@@ -1,6 +1,7 @@
 {
   "name": "monabit-crypto-dashboard",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@9.15.4",
   "engines": {
     "node": ">=20.0.0",
@@ -19,6 +20,8 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.0.1",
+    "@commitlint/config-conventional": "^21.0.1",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
@@ -26,7 +29,8 @@
     "lint-staged": "^15.5.0",
     "prettier": "^3.8.3",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.60.0"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
