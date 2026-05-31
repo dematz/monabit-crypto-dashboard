@@ -7,7 +7,6 @@ import { listAlerts, createAlert, deactivateAlert, deleteAlert } from './alerts.
 import { updateUserSchema, createUserSchema } from './users.schema.js';
 import { updatePreferencesSchema } from './preferences.schema.js';
 import { addFavoriteSchema, createAlertSchema } from './alerts-favorites.schema.js';
-import type { CreateUserInput } from './users.schema.js';
 
 export async function usersModule(app: FastifyInstance) {
   app.get('/users', { preHandler: [authenticate, requireAdmin] }, async () => {

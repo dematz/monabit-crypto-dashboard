@@ -23,5 +23,4 @@ export const formatCompact = (value: number, currency: 'USD' | 'EUR' = 'USD') =>
   return `${sign}${symbol}${abs.toFixed(2)}`;
 };
 
-export const formatPercent = (value: number) =>
-  `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
+export const formatPercent = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;

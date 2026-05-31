@@ -9,6 +9,19 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AlertModal } from './alert-modal';
 import { toDisplayAsset, type DisplayCryptoAsset } from '@/types';
 import { Line, LineChart, ResponsiveContainer } from 'recharts';
+import { useBinanceWs } from '@/hooks/use-binance-ws';
+
+const SYMBOL_MAP: Record<string, string> = {
+  BTCUSDT: 'bitcoin',
+  ETHUSDT: 'ethereum',
+  BNBUSDT: 'binancecoin',
+  SOLUSDT: 'solana',
+  XRPUSDT: 'ripple',
+  ADAUSDT: 'cardano',
+  DOGEUSDT: 'dogecoin',
+  AVAXUSDT: 'avalanche-2',
+  DOTUSDT: 'polkadot',
+};
 
 type Filter = 'all' | 'favorites' | 'gainers' | 'losers';
 
@@ -16,6 +29,7 @@ export function CryptoTable() {
   const currency = useAppStore((s) => s.currency);
   const favorites = useAppStore((s) => s.favorites);
   const toggleFavorite = useAppStore((s) => s.toggleFavorite);
+  const { livePrices } = useBinanceWs();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [alertAsset, setAlertAsset] = useState<DisplayCryptoAsset | null>(null);
@@ -32,6 +46,14 @@ export function CryptoTable() {
   const rows = useMemo(() => {
     const base = data ?? [];
     return base
+      .map((a) => {
+        const symbol = Object.keys(SYMBOL_MAP).find((s) => SYMBOL_MAP[s] === a.id);
+        const live = symbol ? livePrices[symbol] : undefined;
+        if (live) {
+          return { ...a, price: live.price, change24h: live.change24h, volume24h: live.volume };
+        }
+        return a;
+      })
       .filter((a) =>
         query
           ? a.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -44,7 +66,7 @@ export function CryptoTable() {
         if (filter === 'losers') return a.change24h < 0;
         return true;
       });
-  }, [data, query, filter, favorites]);
+  }, [data, query, filter, favorites, livePrices]);
 
   const filters: { id: Filter; label: string }[] = [
     { id: 'all', label: 'All' },
@@ -58,7 +80,9 @@ export function CryptoTable() {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5">
         <div>
           <h2 className="text-base font-semibold">Top 10 Cryptocurrencies</h2>
-          <p className="text-xs text-muted-foreground">Data updated every 60s from CoinGecko</p>
+          <p className="text-xs text-muted-foreground">
+            Real-time prices via Binance &middot; Market data from CoinGecko
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { config } from '../../config/index.js';
+import { isBinanceConnected } from '../../modules/crypto/binance-ws.js';
 
 export async function healthRoute(app: FastifyInstance) {
   app.get('/health', async () => ({
@@ -9,7 +10,7 @@ export async function healthRoute(app: FastifyInstance) {
     services: {
       database: 'ok' as const,
       coingecko: 'ok' as const,
-      binance_ws: 'ok' as const,
+      binance_ws: isBinanceConnected() ? ('ok' as const) : ('disconnected' as const),
     },
   }));
 }

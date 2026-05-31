@@ -1,23 +1,23 @@
-import { cn } from "@/lib/utils";
-import { ArrowDownRight, ArrowUpRight } from "lucide-react";
-import { Area, AreaChart, ResponsiveContainer } from "recharts";
+import { cn } from '@/lib/utils';
+import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 
 type Props = {
   label: string;
   value: string;
   change: number;
   spark: number[];
-  accent?: "brand" | "info" | "warning";
+  accent?: 'brand' | 'info' | 'warning';
 };
 
-export function KpiCard({ label, value, change, spark, accent = "brand" }: Props) {
+export function KpiCard({ label, value, change, spark, accent = 'brand' }: Props) {
   const positive = change >= 0;
   const stroke =
-    accent === "info"
-      ? "var(--color-chart-2)"
-      : accent === "warning"
-        ? "var(--color-chart-3)"
-        : "var(--color-success)";
+    accent === 'info'
+      ? 'var(--color-chart-2)'
+      : accent === 'warning'
+        ? 'var(--color-chart-3)'
+        : 'var(--color-success)';
   const data = spark.map((v, i) => ({ i, v }));
 
   return (
@@ -29,10 +29,8 @@ export function KpiCard({ label, value, change, spark, accent = "brand" }: Props
         </div>
         <span
           className={cn(
-            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-            positive
-              ? "bg-success/15 text-success"
-              : "bg-danger/15 text-danger",
+            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+            positive ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger',
           )}
         >
           {positive ? (

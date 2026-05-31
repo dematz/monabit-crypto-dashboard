@@ -33,7 +33,16 @@ export type PriceAlert = {
 };
 
 export function toDisplayAsset(
-  api: { id: string; symbol: string; name: string; current_price: number; market_cap: number; total_volume: number; price_change_percentage_24h: number; image: string },
+  api: {
+    id: string;
+    symbol: string;
+    name: string;
+    current_price: number;
+    market_cap: number;
+    total_volume: number;
+    price_change_percentage_24h: number;
+    image: string;
+  },
   index: number,
 ): DisplayCryptoAsset {
   const seed = (n: number) => {

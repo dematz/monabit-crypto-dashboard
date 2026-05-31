@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from '../../lib/supabase.js';
-import type { CreateUserInput, UpdateUserInput } from './users.schema.js';
+import type { UpdateUserInput } from './users.schema.js';
 
 export async function listUsers() {
   const { data } = await getSupabaseAdmin()
@@ -10,11 +10,7 @@ export async function listUsers() {
 }
 
 export async function getUserById(id: string) {
-  const { data } = await getSupabaseAdmin()
-    .from('user_profiles')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const { data } = await getSupabaseAdmin().from('user_profiles').select('*').eq('id', id).single();
   return data;
 }
 

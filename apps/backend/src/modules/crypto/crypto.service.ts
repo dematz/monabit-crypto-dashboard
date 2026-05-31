@@ -51,7 +51,7 @@ export async function getCoinHistory(
     `${config.COINGECKO_API_URL}/coins/${coinId}/market_chart`,
     { params: { vs_currency: 'usd', days } },
   );
-  const points: PricePoint[] = data.prices.map(([ts, price], i) => ({
+  const points: PricePoint[] = data.prices.map(([_ts, price], i) => ({
     t: range === '1D' ? `${String(i).padStart(2, '0')}:00` : `D${i + 1}`,
     price,
   }));

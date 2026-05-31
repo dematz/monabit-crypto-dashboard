@@ -163,10 +163,52 @@ export const buildPriceHistory = (assetId: string, range: '1D' | '7D' | '1M'): P
 };
 
 export const MOCK_USERS: UserRow[] = [
-  { id: 'u_01', name: 'María González', email: 'maria@monabit.io', role: 'Admin', status: 'Activo', createdAt: '2024-02-11' },
-  { id: 'u_02', name: 'Carlos Pérez', email: 'carlos@monabit.io', role: 'User', status: 'Activo', createdAt: '2024-04-03' },
-  { id: 'u_03', name: 'Lucía Fernández', email: 'lucia@monabit.io', role: 'User', status: 'Inactivo', createdAt: '2024-05-21' },
-  { id: 'u_04', name: 'Diego Ramírez', email: 'diego@monabit.io', role: 'Admin', status: 'Activo', createdAt: '2024-06-09' },
-  { id: 'u_05', name: 'Ana Torres', email: 'ana@monabit.io', role: 'User', status: 'Activo', createdAt: '2024-07-15' },
-  { id: 'u_06', name: 'Javier López', email: 'javier@monabit.io', role: 'User', status: 'Inactivo', createdAt: '2024-08-02' },
+  {
+    id: 'u_01',
+    name: 'María González',
+    email: 'maria@monabit.io',
+    role: 'Admin',
+    status: 'Activo',
+    createdAt: '2024-02-11',
+  },
+  {
+    id: 'u_02',
+    name: 'Carlos Pérez',
+    email: 'carlos@monabit.io',
+    role: 'User',
+    status: 'Activo',
+    createdAt: '2024-04-03',
+  },
+  {
+    id: 'u_03',
+    name: 'Lucía Fernández',
+    email: 'lucia@monabit.io',
+    role: 'User',
+    status: 'Inactivo',
+    createdAt: '2024-05-21',
+  },
+  {
+    id: 'u_04',
+    name: 'Diego Ramírez',
+    email: 'diego@monabit.io',
+    role: 'Admin',
+    status: 'Activo',
+    createdAt: '2024-06-09',
+  },
+  {
+    id: 'u_05',
+    name: 'Ana Torres',
+    email: 'ana@monabit.io',
+    role: 'User',
+    status: 'Activo',
+    createdAt: '2024-07-15',
+  },
+  {
+    id: 'u_06',
+    name: 'Javier López',
+    email: 'javier@monabit.io',
+    role: 'User',
+    status: 'Inactivo',
+    createdAt: '2024-08-02',
+  },
 ];
