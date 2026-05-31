@@ -9,6 +9,7 @@ const envSchema = z.object({
   SUPABASE_URL: z.string(),
   SUPABASE_ANON_KEY: z.string(),
   SUPABASE_SERVICE_ROLE_KEY: z.string(),
+  COINGECKO_API_URL: z.string().default('https://api.coingecko.com/api/v3'),
   ALLOWED_ORIGINS: z.string().default('http://localhost:3000'),
   MOCK_CRYPTO: z.coerce.boolean().default(true),
   CACHE_TTL_TOP10: z.coerce.number().default(60),

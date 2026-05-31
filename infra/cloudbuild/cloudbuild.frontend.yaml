@@ -6,6 +6,8 @@ steps:
       - 'us-central1-docker.pkg.dev/${PROJECT_ID}/monabit-registry/frontend:${SHORT_SHA}'
       - '-f'
       - 'apps/frontend/Dockerfile'
+      - '--build-arg'
+      - 'VITE_API_URL=${_VITE_API_URL}'
       - '.'
 
   - name: 'gcr.io/cloud-builders/docker'
@@ -23,6 +25,15 @@ steps:
       - '--region=us-central1'
       - '--platform=managed'
       - '--allow-unauthenticated'
+      - '--min-instances=0'
+      - '--max-instances=3'
+      - '--memory=256Mi'
+
+substitutions:
+  _VITE_API_URL: 'https://monabit-backend-xxxxx-uc.a.run.app'
 
 options:
   logging: CLOUD_LOGGING_ONLY
+
+images:
+  - 'us-central1-docker.pkg.dev/${PROJECT_ID}/monabit-registry/frontend:${SHORT_SHA}'

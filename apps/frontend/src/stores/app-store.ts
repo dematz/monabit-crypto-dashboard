@@ -29,7 +29,15 @@ type AppState = {
 };
 
 import { setTokenGetter } from '@/services/api';
-import { fetchPreferences, updatePreferences as apiUpdatePreferences } from '@/services/users-api';
+import { setRefreshTokenFn } from '@/services/api';
+import { supabase } from '@/services/supabase';
+import {
+  fetchPreferences,
+  updatePreferences as apiUpdatePreferences,
+  fetchFavorites,
+  addFavorite as apiAddFavorite,
+  removeFavorite as apiRemoveFavorite,
+} from '@/services/users-api';
 
 export const useAppStore = create<AppState>()(
   persist(
@@ -60,25 +68,40 @@ export const useAppStore = create<AppState>()(
         if (user) apiUpdatePreferences({ refresh_interval: refreshInterval }).catch(() => {});
       },
 
-      toggleFavorite: (id) =>
-        set((s) => ({
-          favorites: s.favorites.includes(id)
-            ? s.favorites.filter((f) => f !== id)
-            : [...s.favorites, id],
-        })),
+      toggleFavorite: async (id) => {
+        const current = get().favorites;
+        const isFav = current.includes(id);
+        set({ favorites: isFav ? current.filter((f) => f !== id) : [...current, id] });
+        const user = get().user;
+        if (user) {
+          if (isFav) {
+            apiRemoveFavorite(id).catch(() => set({ favorites: current }));
+          } else {
+            apiAddFavorite(id, id).catch(() => set({ favorites: current }));
+          }
+        }
+      },
+
       setAiOpen: (aiOpen) => set({ aiOpen }),
 
       setSession: (user, token) => {
         set({ user, token });
-        fetchPreferences()
-          .then((prefs) => {
-            set({
-              theme: (prefs.theme as Theme) ?? 'dark',
-              currency: (prefs.currency as Currency) ?? 'USD',
-              refreshInterval: prefs.refresh_interval ?? 30,
-            });
-          })
-          .catch(() => {});
+        Promise.all([
+          fetchPreferences()
+            .then((prefs) => {
+              set({
+                theme: (prefs.theme as Theme) ?? 'dark',
+                currency: (prefs.currency as Currency) ?? 'USD',
+                refreshInterval: prefs.refresh_interval ?? 30,
+              });
+            })
+            .catch(() => {}),
+          fetchFavorites()
+            .then((favs) => {
+              set({ favorites: favs.map((f) => f.coin_id) });
+            })
+            .catch(() => {}),
+        ]);
       },
 
       logout: () => set({ user: null, token: null }),
@@ -88,3 +111,13 @@ export const useAppStore = create<AppState>()(
 );
 
 setTokenGetter(() => useAppStore.getState().token);
+
+setRefreshTokenFn(async () => {
+  const { data } = await supabase.auth.refreshSession();
+  if (data.session) {
+    useAppStore.setState({ token: data.session.access_token });
+    return data.session.access_token;
+  }
+  useAppStore.getState().logout();
+  return null;
+});

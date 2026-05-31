@@ -4,14 +4,17 @@ import { X } from 'lucide-react';
 import type { DisplayCryptoAsset } from '@/types';
 import { formatCurrency } from '@/lib/format';
 import { useAppStore } from '@/stores/app-store';
+import { createAlert } from '@/services/users-api';
 import { cn } from '@/lib/utils';
 
 type Props = { asset: DisplayCryptoAsset | null; onClose: () => void };
 
 export function AlertModal({ asset, onClose }: Props) {
   const currency = useAppStore((s) => s.currency);
+  const user = useAppStore((s) => s.user);
   const [condition, setCondition] = useState<'above' | 'below'>('above');
   const [target, setTarget] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (asset) {
@@ -22,17 +25,29 @@ export function AlertModal({ asset, onClose }: Props) {
 
   if (!asset) return null;
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const n = Number(target);
     if (!Number.isFinite(n) || n <= 0) {
       toast.error('Enter a valid target price');
       return;
     }
-    toast.success(
-      `Alert created: ${asset.symbol} ${condition === 'above' ? '≥' : '≤'} ${formatCurrency(n, currency)}`,
-    );
-    onClose();
+    if (!user) {
+      toast.error('You must be logged in to create alerts');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await createAlert(asset.id, asset.symbol, condition, n);
+      toast.success(
+        `Alert created: ${asset.symbol} ${condition === 'above' ? '≥' : '≤'} ${formatCurrency(n, currency)}`,
+      );
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create alert');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -114,9 +129,10 @@ export function AlertModal({ asset, onClose }: Props) {
             </button>
             <button
               type="submit"
-              className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground hover:opacity-90"
+              disabled={submitting}
+              className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground hover:opacity-90 disabled:opacity-60"
             >
-              Create alert
+              {submitting ? 'Creating...' : 'Create alert'}
             </button>
           </div>
         </form>

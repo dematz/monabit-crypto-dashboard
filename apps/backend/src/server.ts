@@ -9,6 +9,7 @@ import { authModule } from './modules/auth/auth.routes.js';
 import { usersModule } from './modules/users/users.routes.js';
 import { cryptoModule } from './modules/crypto/crypto.routes.js';
 import { errorHandler } from './shared/errors/index.js';
+import { auditLog } from './shared/audit/index.js';
 
 async function main() {
   const app = Fastify({
@@ -22,13 +23,15 @@ async function main() {
   });
 
   await app.register(cors, {
-    origin: config.ALLOWED_ORIGINS.split(',').map((o) => o.trim()),
+    origin: config.ALLOWED_ORIGINS.split(',').map((o: string) => o.trim()),
   });
 
   await app.register(rateLimit, {
     max: 100,
     timeWindow: '1 minute',
   });
+
+  app.addHook('onResponse', auditLog);
 
   await app.register(healthRoute);
   await app.register(authModule);

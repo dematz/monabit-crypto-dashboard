@@ -6,19 +6,16 @@ import { mockTop10, mockMarketOverview, mockCoinHistory } from './coingecko.mock
 async function fetchTop10(): Promise<CryptoAsset[]> {
   if (config.MOCK_CRYPTO) return mockTop10;
   const { default: axios } = await import('axios');
-  const { data } = await axios.get<CryptoAsset[]>(
-    `${config.SUPABASE_URL}/coins/markets`,
-    { params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 10, sparkline: false } },
-  );
+  const { data } = await axios.get<CryptoAsset[]>(`${config.COINGECKO_API_URL}/coins/markets`, {
+    params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 10, sparkline: false },
+  });
   return data;
 }
 
 async function fetchMarketOverview(): Promise<MarketOverview> {
   if (config.MOCK_CRYPTO) return mockMarketOverview;
   const { default: axios } = await import('axios');
-  const { data } = await axios.get<{ data: MarketOverview }>(
-    `${config.SUPABASE_URL}/global`,
-  );
+  const { data } = await axios.get<{ data: MarketOverview }>(`${config.COINGECKO_API_URL}/global`);
   return data.data;
 }
 
@@ -51,7 +48,7 @@ export async function getCoinHistory(
   const { default: axios } = await import('axios');
   const days = range === '1D' ? 1 : range === '7D' ? 7 : 30;
   const { data } = await axios.get<{ prices: [number, number][] }>(
-    `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart`,
+    `${config.COINGECKO_API_URL}/coins/${coinId}/market_chart`,
     { params: { vs_currency: 'usd', days } },
   );
   const points: PricePoint[] = data.prices.map(([ts, price], i) => ({

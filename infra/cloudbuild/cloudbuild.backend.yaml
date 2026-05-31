@@ -23,11 +23,17 @@ steps:
       - '--region=us-central1'
       - '--platform=managed'
       - '--no-allow-unauthenticated'
-      - '--min-instances=1'
-      - '--max-instances=1'
+      - '--min-instances=0'
+      - '--max-instances=3'
+      - '--memory=512Mi'
+      - '--set-env-vars=NODE_ENV=production,PORT=8080'
       - '--set-secrets=SUPABASE_URL=supabase-url:latest'
       - '--set-secrets=SUPABASE_ANON_KEY=supabase-anon-key:latest'
       - '--set-secrets=SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest'
+      - '--set-secrets=ALLOWED_ORIGINS=allowed-origins:latest'
 
 options:
   logging: CLOUD_LOGGING_ONLY
+
+images:
+  - 'us-central1-docker.pkg.dev/${PROJECT_ID}/monabit-registry/backend:${SHORT_SHA}'

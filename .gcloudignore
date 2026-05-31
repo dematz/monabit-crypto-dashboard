@@ -1,0 +1,14 @@
+node_modules
+.git
+.github
+.husky
+docs
+supabase
+.env
+.env.*
+*.md
+!README.md
+.claude
+.agents
+skills-lock.json
+google-cloud-sdk
