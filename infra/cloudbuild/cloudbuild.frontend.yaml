@@ -1,34 +1,48 @@
 # Cloud Build config for MonaBit frontend.
-# VITE_ vars are public client-side keys (embedded in JS bundle at build time).
-# SUPABASE_ANON_KEY is safe to expose — it's designed for browser use.
-# Must provide all substitutions via --substitutions flag or deploy.sh script.
+# VITE_API_URL, VITE_SUPABASE_URL, and VITE_WS_URL are passed via trigger substitutions.
+# VITE_SUPABASE_ANON_KEY is fetched from Secret Manager at build time.
 steps:
   - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
     args:
-      - 'build'
-      - '-t'
-      - 'us-central1-docker.pkg.dev/${PROJECT_ID}/monabit-registry/frontend:latest'
-      - '-f'
-      - 'apps/frontend/Dockerfile'
-      - '--build-arg'
-      - 'VITE_API_URL=${_VITE_API_URL}'
-      - '--build-arg'
-      - 'VITE_SUPABASE_URL=${_VITE_SUPABASE_URL}'
-      - '--build-arg'
-      - 'VITE_SUPABASE_ANON_KEY=${_VITE_SUPABASE_ANON_KEY}'
-      - '--build-arg'
-      - 'VITE_WS_URL=${_VITE_WS_URL}'
-      - '.'
+      - '-c'
+      - |
+        docker build \
+          -t us-central1-docker.pkg.dev/${PROJECT_ID}/monabit-registry/frontend:latest \
+          -f apps/frontend/Dockerfile \
+          --build-arg VITE_API_URL=${_VITE_API_URL} \
+          --build-arg VITE_SUPABASE_URL=${_VITE_SUPABASE_URL} \
+          --build-arg VITE_SUPABASE_ANON_KEY=$$VITE_SUPABASE_ANON_KEY_SECRET \
+          --build-arg VITE_WS_URL=${_VITE_WS_URL} \
+          .
+    secretEnv: ['VITE_SUPABASE_ANON_KEY_SECRET']
 
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
       - 'us-central1-docker.pkg.dev/${PROJECT_ID}/monabit-registry/frontend:latest'
 
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'monabit-frontend'
+      - '--image=us-central1-docker.pkg.dev/${PROJECT_ID}/monabit-registry/frontend:latest'
+      - '--region=us-central1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--min-instances=0'
+      - '--max-instances=3'
+      - '--memory=256Mi'
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/${PROJECT_ID}/secrets/VITE_SUPABASE_ANON_KEY/versions/latest
+      env: VITE_SUPABASE_ANON_KEY_SECRET
+
 substitutions:
   _VITE_API_URL: 'https://monabit-backend-290867308628.us-central1.run.app'
-  _VITE_SUPABASE_URL: 'REQUIRED — pass via --substitutions=_VITE_SUPABASE_URL=...'
-  _VITE_SUPABASE_ANON_KEY: 'REQUIRED — pass via --substitutions=_VITE_SUPABASE_ANON_KEY=...'
+  _VITE_SUPABASE_URL: 'https://xsnwzthikalbdkquidyi.supabase.co'
   _VITE_WS_URL: 'wss://monabit-backend-290867308628.us-central1.run.app/ws/prices'
 
 options:

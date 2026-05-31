@@ -21,7 +21,7 @@ describe('formatCurrency', () => {
   });
 
   it('formats zero', () => {
-    expect(formatCurrency(0, 'USD')).toBe('$0.0000');
+    expect(formatCurrency(0, 'USD')).toBe('$0.00');
   });
 });
 

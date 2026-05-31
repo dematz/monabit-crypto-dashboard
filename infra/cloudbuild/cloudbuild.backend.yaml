@@ -1,7 +1,5 @@
 # Cloud Build config for MonaBit backend.
-# Secrets are injected at Cloud Run deploy time via --set-secrets (see scripts/deploy.sh).
-# Required GCP secrets: supabase-anon-key, supabase-service-role-key,
-#   allowed-origins, coingecko-api-key, groq-api-key
+# Builds, pushes, and deploys to Cloud Run on every push to master.
 steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
@@ -16,6 +14,31 @@ steps:
     args:
       - 'push'
       - 'us-central1-docker.pkg.dev/${PROJECT_ID}/monabit-registry/backend:${SHORT_SHA}'
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'monabit-backend'
+      - '--image=us-central1-docker.pkg.dev/${PROJECT_ID}/monabit-registry/backend:${SHORT_SHA}'
+      - '--region=us-central1'
+      - '--platform=managed'
+      - '--no-allow-unauthenticated'
+      - '--min-instances=1'
+      - '--max-instances=3'
+      - '--memory=512Mi'
+      - '--set-env-vars=NODE_ENV=production,COINGECKO_API_URL=https://api.coingecko.com/api/v3,MOCK_CRYPTO=false,BINANCE_WS_URL=wss://stream.binance.com:9443,CACHE_TTL_TOP10=60,CACHE_TTL_MARKET_OVERVIEW=120,CACHE_TTL_COIN_HISTORY=300,LOG_LEVEL=info,APP_VERSION=0.1.0,GROQ_MODEL=llama-3.3-70b-versatile,GROQ_TIMEOUT=30000'
+      - '--set-secrets=SUPABASE_URL=supabase-url:latest,SUPABASE_ANON_KEY=supabase-anon-key:latest,SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest,ALLOWED_ORIGINS=allowed-origins:latest,COINGECKO_API_KEY=coingecko-api-key:latest,GROQ_API_KEY=groq-api-key:latest'
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud run services add-iam-policy-binding monabit-backend \
+          --region=us-central1 \
+          --member=allUsers \
+          --role=roles/run.invoker 2>/dev/null || true
 
 options:
   logging: CLOUD_LOGGING_ONLY
