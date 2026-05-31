@@ -4,11 +4,11 @@ Fullstack web application for consulting, visualizing, and managing cryptocurren
 
 **Live URLs:**
 
-- Frontend: `https://monabit-frontend-XXXXX.us-central1.run.app`
-- Backend: `https://monabit-backend-XXXXX.us-central1.run.app`
-- Health: `https://monabit-backend-XXXXX.us-central1.run.app/health`
+- Frontend: `https://monabit-frontend-290867308628.us-central1.run.app`
+- Backend: `https://monabit-backend-290867308628.us-central1.run.app`
+- Health: `https://monabit-backend-290867308628.us-central1.run.app/health`
 
-> Detailed documentation: [Frontend README](apps/frontend/README.md) | [Backend README](apps/backend/README.md)
+> Detailed documentation: [Frontend README](apps/frontend/README.md) | [Backend README](apps/backend/README.md) | [Changelog](CHANGELOG.md)
 
 ---
 
@@ -142,6 +142,60 @@ audit_logs
 | Rate     | 30 req/min, cached (60–300s TTL) | Continuous stream           |
 | Auth     | Optional API key for Pro tier    | None needed for public data |
 | Fallback | Circuit breaker + stale cache    | Auto-reconnect with backoff |
+
+---
+
+## Architecture Decision Records
+
+### ADR 001: Monorepo with pnpm Workspaces
+
+**Context**: Need to share types and utilities between frontend and backend without publishing external packages, and make navigation easy for evaluators.
+
+**Decision**: pnpm monorepo with Turborepo.
+
+**Alternatives considered**: Separate repos (friction with shared types); npm workspaces (slower than pnpm).
+
+**Consequences**: Shared types without publishing; unified CI with path filters; higher initial setup complexity.
+
+### ADR 002: Supabase (PostgreSQL) over Firestore
+
+**Context**: Challenge requires either Firestore or Supabase as database.
+
+**Decision**: Supabase (PostgreSQL).
+
+**Alternatives considered**: Firestore (NoSQL, no joins, high vendor lock-in).
+
+**Consequences**: Full SQL with joins and CTEs; expressive RLS policies; versioned migrations; standard PostgreSQL reduces vendor lock-in; aligns with PostgreSQL expertise required for the role.
+
+### ADR 003: CoinGecko + Binance WebSocket
+
+**Context**: Need a crypto data provider for market KPIs, top 10 listings, historical prices, and real-time updates.
+
+**Decision**: CoinGecko as primary REST data source + Binance WebSocket for real-time price ticks.
+
+**Alternatives considered**: CoinMarketCap (similar rate limits, no WebSocket); Binance only (no global KPIs or historical data).
+
+**Consequences**: CoinGecko free tier covers all required data; Binance WS provides sub-second price updates at no cost; cache layer (TTL) mitigates rate limits; backend limited to 1 instance due to stateful WS connection.
+
+### ADR 004: Groq API for AI Market Assistant
+
+**Context**: Need an LLM endpoint for the crypto market assistant feature.
+
+**Decision**: Groq API with `llama-3.3-70b-versatile` model.
+
+**Alternatives considered**: Local LLM server (not available in Cloud Run); OpenAI API (higher cost); no AI feature (misses an opportunity for innovation).
+
+**Consequences**: Cloud-based, no infrastructure to manage; free tier (30 req/min, 14400 req/day) is sufficient for the dashboard; backend injects real market context (top 10 prices) into each prompt; graceful fallback when API key is not set.
+
+### ADR 005: Single Cloud Run Instance with In-Memory Cache
+
+**Context**: Backend needs both HTTP API and a persistent WebSocket connection to Binance.
+
+**Decision**: Run backend on a single Cloud Run instance (`min:1, max:3`) with `node-cache` for caching.
+
+**Alternatives considered**: Redis for shared cache (adds infrastructure cost and complexity for MVP); dedicated WS service (over-engineering for MVP).
+
+**Consequences**: Simpler deployment; in-memory cache is collocated with the API; WebSocket connection survives between requests; cache is lost on cold start (mitigated by warmup on startup); horizontal scaling requires Redis migration.
 
 ---
 
