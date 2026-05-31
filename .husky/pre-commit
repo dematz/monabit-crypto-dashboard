@@ -1,0 +1,2 @@
+npx lint-staged
+npx detect-secrets scan --baseline .secrets.baseline

@@ -1,0 +1,14 @@
+name: PR Review
+
+on:
+  pull_request:
+    branches: [develop]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PR Analyzer
+        run: echo "PR analysis pending — requires Claude API key in GCP Secret Manager"

@@ -1,0 +1,45 @@
+name: CI Backend
+
+on:
+  push:
+    paths:
+      - 'apps/backend/**'
+      - 'packages/shared-types/**'
+      - 'packages/shared-utils/**'
+      - 'packages/db/**'
+  pull_request:
+    paths:
+      - 'apps/backend/**'
+      - 'packages/shared-types/**'
+      - 'packages/shared-utils/**'
+      - 'packages/db/**'
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm --filter @monabit/backend lint
+
+      - name: Typecheck
+        run: pnpm --filter @monabit/backend typecheck
+
+      - name: Test
+        run: pnpm --filter @monabit/backend test
+
+      - name: Build
+        run: pnpm --filter @monabit/backend build

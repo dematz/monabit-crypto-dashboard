@@ -1,0 +1,28 @@
+import 'dotenv/config';
+import { z } from 'zod';
+
+const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  PORT: z.coerce.number().default(4000),
+  APP_VERSION: z.string().default('0.0.0'),
+  LOG_LEVEL: z.string().default('info'),
+  SUPABASE_URL: z.string(),
+  SUPABASE_ANON_KEY: z.string(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string(),
+  ALLOWED_ORIGINS: z.string().default('http://localhost:3000'),
+  MOCK_CRYPTO: z.coerce.boolean().default(true),
+  CACHE_TTL_TOP10: z.coerce.number().default(60),
+  CACHE_TTL_MARKET_OVERVIEW: z.coerce.number().default(120),
+  CACHE_TTL_COIN_HISTORY: z.coerce.number().default(300),
+  OLLAMA_HOST: z.string().default('http://localhost:11434'),
+  OLLAMA_MODEL: z.string().default('llama3.2'),
+});
+
+const result = envSchema.safeParse(process.env);
+
+if (!result.success) {
+  console.error('Invalid environment variables:', result.error.flatten().fieldErrors);
+  process.exit(1);
+}
+
+export const config = result.data;
