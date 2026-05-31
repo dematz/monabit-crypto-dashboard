@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { config } from '../../config/index.js';
+import { logger } from '../../shared/logger/index.js';
 
 interface OllamaMessage {
   role: 'system' | 'user' | 'assistant';
@@ -33,14 +34,17 @@ export async function askOllama(question: string): Promise<string> {
       { timeout: 30000 },
     );
 
-    return data.message?.content?.trim() || 'I could not generate a response. Please try again.';
+    return data.message.content.trim() || 'I could not generate a response. Please try again.';
   } catch (error) {
     if (axios.isAxiosError(error) && error.code === 'ECONNREFUSED') {
+      logger.warn({ err: error.message }, 'Ollama connection refused');
       return 'Ollama is not running. Please start Ollama locally to enable AI responses.';
     }
     if (axios.isAxiosError(error) && error.code === 'ETIMEDOUT') {
+      logger.warn({ err: error.message }, 'Ollama request timed out');
       return 'The AI request timed out. Please try again.';
     }
+    logger.error({ err: error }, 'Ollama request failed');
     return 'An error occurred while contacting the AI service. Please try again.';
   }
 }

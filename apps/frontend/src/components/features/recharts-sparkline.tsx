@@ -1,6 +1,5 @@
 import { lazy, Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { DisplayCryptoAsset } from '@/types';
 
 const RechartsSparkline = lazy(() =>
   import('./recharts-sparkline-impl').then((m) => ({ default: m.SparklineImpl })),
@@ -18,5 +17,3 @@ export function Sparkline({ data, positive }: SparklineProps) {
     </Suspense>
   );
 }
-
-export { type DisplayCryptoAsset };

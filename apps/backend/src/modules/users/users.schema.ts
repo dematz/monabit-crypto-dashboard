@@ -15,5 +15,3 @@ export const createUserSchema = z.object({
   display_name: z.string().optional(),
   role: z.enum(['admin', 'user']).default('user'),
 });
-
-export type CreateUserInput = z.infer<typeof createUserSchema>;

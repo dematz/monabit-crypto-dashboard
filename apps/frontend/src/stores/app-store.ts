@@ -90,9 +90,9 @@ export const useAppStore = create<AppState>()(
           fetchPreferences()
             .then((prefs) => {
               set({
-                theme: (prefs.theme as Theme) ?? 'dark',
-                currency: (prefs.currency as Currency) ?? 'USD',
-                refreshInterval: prefs.refresh_interval ?? 30,
+                theme: prefs.theme as Theme,
+                currency: prefs.currency as Currency,
+                refreshInterval: prefs.refresh_interval,
               });
             })
             .catch(() => {}),

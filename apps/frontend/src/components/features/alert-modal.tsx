@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import type { DisplayCryptoAsset } from '@/types';
@@ -13,15 +13,8 @@ export function AlertModal({ asset, onClose }: Props) {
   const currency = useAppStore((s) => s.currency);
   const user = useAppStore((s) => s.user);
   const [condition, setCondition] = useState<'above' | 'below'>('above');
-  const [target, setTarget] = useState('');
+  const [target, setTarget] = useState(asset?.price.toFixed(2) ?? '');
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (asset) {
-      setCondition('above');
-      setTarget(asset.price.toFixed(2));
-    }
-  }, [asset]);
 
   if (!asset) return null;
 

@@ -1,5 +1,19 @@
 import { getSupabaseAdmin } from '../../lib/supabase.js';
-import type { PriceAlert } from '@monabit/shared-types';
+import { HttpError } from '../../shared/errors/index.js';
+import { priceAlertSchema } from './alerts-favorites.schema.js';
+import type { PriceAlert } from './alerts-favorites.schema.js';
+
+function parseAlert(data: unknown): PriceAlert {
+  const parsed = priceAlertSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new HttpError(500, 'Failed to parse alert data from database');
+  }
+  return parsed.data;
+}
+
+function parseAlerts(data: unknown[]): PriceAlert[] {
+  return data.map((item) => parseAlert(item));
+}
 
 export async function listAlerts(userId: string): Promise<PriceAlert[]> {
   const { data } = await getSupabaseAdmin()
@@ -7,7 +21,7 @@ export async function listAlerts(userId: string): Promise<PriceAlert[]> {
     .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
-  return (data ?? []) as PriceAlert[];
+  return parseAlerts(data ?? []);
 }
 
 export async function createAlert(
@@ -24,7 +38,8 @@ export async function createAlert(
     .insert({ user_id: userId, ...input })
     .select()
     .single();
-  return data as PriceAlert;
+  if (!data) throw new HttpError(500, 'Failed to create alert');
+  return parseAlert(data);
 }
 
 export async function deactivateAlert(userId: string, alertId: string): Promise<PriceAlert | null> {
@@ -35,7 +50,7 @@ export async function deactivateAlert(userId: string, alertId: string): Promise<
     .eq('user_id', userId)
     .select()
     .single();
-  return data as PriceAlert | null;
+  return data ? parseAlert(data) : null;
 }
 
 export async function deleteAlert(userId: string, alertId: string): Promise<PriceAlert | null> {
@@ -46,5 +61,5 @@ export async function deleteAlert(userId: string, alertId: string): Promise<Pric
     .eq('user_id', userId)
     .select()
     .single();
-  return data as PriceAlert | null;
+  return data ? parseAlert(data) : null;
 }

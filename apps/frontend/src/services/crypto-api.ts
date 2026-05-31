@@ -1,27 +1,27 @@
-import type { CryptoAsset, MarketOverview } from '@monabit/shared-types';
 import { api } from './api';
+import { cryptoAssetSchema, marketOverviewSchema, coinHistoryPointSchema } from '../lib/schemas';
+import { z } from 'zod';
 
-interface ApiListResponse<T> {
-  data: T[];
-  cached: boolean;
+const apiListResponseSchema = <T extends z.ZodType>(itemSchema: T) =>
+  z.object({ data: z.array(itemSchema), cached: z.boolean() });
+
+const apiSingleResponseSchema = <T extends z.ZodType>(itemSchema: T) =>
+  z.object({ data: itemSchema, cached: z.boolean() });
+
+export function fetchTop10() {
+  return api
+    .get('/crypto/top10')
+    .then((data) => apiListResponseSchema(cryptoAssetSchema).parse(data));
 }
 
-interface ApiSingleResponse<T> {
-  data: T;
-  cached: boolean;
+export function fetchMarketOverview() {
+  return api
+    .get('/crypto/market-overview')
+    .then((data) => apiSingleResponseSchema(marketOverviewSchema).parse(data));
 }
 
-export function fetchTop10(): Promise<ApiListResponse<CryptoAsset>> {
-  return api.get('/crypto/top10');
-}
-
-export function fetchMarketOverview(): Promise<ApiSingleResponse<MarketOverview>> {
-  return api.get('/crypto/market-overview');
-}
-
-export function fetchCoinHistory(
-  coinId: string,
-  range: '1D' | '7D' | '1M',
-): Promise<{ data: { t: string; price: number }[]; cached: boolean }> {
-  return api.get(`/crypto/history/${coinId}?range=${range}`);
+export function fetchCoinHistory(coinId: string, range: '1D' | '7D' | '1M') {
+  return api
+    .get(`/crypto/history/${coinId}?range=${range}`)
+    .then((data) => apiSingleResponseSchema(z.array(coinHistoryPointSchema)).parse(data));
 }

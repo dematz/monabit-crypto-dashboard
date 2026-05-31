@@ -1,65 +1,44 @@
-import type { UserProfile, UserPreferences } from '@monabit/shared-types';
 import { api } from './api';
+import { z } from 'zod';
+import {
+  userProfileSchema,
+  userPreferencesSchema,
+  favoriteSchema,
+  priceAlertSchema,
+} from '../lib/schemas';
 
-export function fetchUsers(): Promise<UserProfile[]> {
-  return api.get('/users');
+export function fetchUsers() {
+  return api.get('/users').then((data) => z.array(userProfileSchema).parse(data));
 }
 
-export function deactivateUser(id: string): Promise<UserProfile> {
-  return api.delete(`/users/${id}`);
+export function deactivateUser(id: string) {
+  return api.delete(`/users/${id}`).then((data) => userProfileSchema.parse(data));
 }
 
-export function updateUser(
-  id: string,
-  data: Partial<Pick<UserProfile, 'display_name' | 'role' | 'is_active'>>,
-): Promise<UserProfile> {
-  return api.patch(`/users/${id}`, data);
-}
-
-export function fetchPreferences(): Promise<UserPreferences> {
-  return api.get('/users/me/preferences');
+export function fetchPreferences() {
+  return api.get('/users/me/preferences').then((data) => userPreferencesSchema.parse(data));
 }
 
 export function updatePreferences(
-  data: Partial<Pick<UserPreferences, 'theme' | 'currency' | 'refresh_interval'>>,
-): Promise<UserPreferences> {
-  return api.patch('/users/me/preferences', data);
+  data: Partial<
+    Pick<z.infer<typeof userPreferencesSchema>, 'theme' | 'currency' | 'refresh_interval'>
+  >,
+) {
+  return api.patch('/users/me/preferences', data).then((data) => userPreferencesSchema.parse(data));
 }
 
-export interface Favorite {
-  id: string;
-  user_id: string;
-  coin_id: string;
-  coin_symbol: string;
-  added_at: string;
+export function fetchFavorites() {
+  return api.get('/users/me/favorites').then((data) => z.array(favoriteSchema).parse(data));
 }
 
-export function fetchFavorites(): Promise<Favorite[]> {
-  return api.get('/users/me/favorites');
+export function addFavorite(coinId: string, coinSymbol: string) {
+  return api
+    .post('/users/me/favorites', { coin_id: coinId, coin_symbol: coinSymbol })
+    .then((data) => favoriteSchema.parse(data));
 }
 
-export function addFavorite(coinId: string, coinSymbol: string): Promise<Favorite> {
-  return api.post('/users/me/favorites', { coin_id: coinId, coin_symbol: coinSymbol });
-}
-
-export function removeFavorite(coinId: string): Promise<Favorite> {
-  return api.delete(`/users/me/favorites/${coinId}`);
-}
-
-export interface PriceAlert {
-  id: string;
-  user_id: string;
-  coin_id: string;
-  coin_symbol: string;
-  condition: 'above' | 'below';
-  target_price: number;
-  is_active: boolean;
-  triggered_at: string | null;
-  created_at: string;
-}
-
-export function fetchAlerts(): Promise<PriceAlert[]> {
-  return api.get('/users/me/alerts');
+export function removeFavorite(coinId: string) {
+  return api.delete(`/users/me/favorites/${coinId}`).then((data) => favoriteSchema.parse(data));
 }
 
 export function createAlert(
@@ -67,19 +46,13 @@ export function createAlert(
   coinSymbol: string,
   condition: 'above' | 'below',
   targetPrice: number,
-): Promise<PriceAlert> {
-  return api.post('/users/me/alerts', {
-    coin_id: coinId,
-    coin_symbol: coinSymbol,
-    condition,
-    target_price: targetPrice,
-  });
-}
-
-export function deactivateAlert(alertId: string): Promise<PriceAlert> {
-  return api.patch(`/users/me/alerts/${alertId}/deactivate`);
-}
-
-export function deleteAlert(alertId: string): Promise<PriceAlert> {
-  return api.delete(`/users/me/alerts/${alertId}`);
+) {
+  return api
+    .post('/users/me/alerts', {
+      coin_id: coinId,
+      coin_symbol: coinSymbol,
+      condition,
+      target_price: targetPrice,
+    })
+    .then((data) => priceAlertSchema.parse(data));
 }

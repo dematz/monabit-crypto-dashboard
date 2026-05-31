@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { z } from 'zod';
 import { authenticate, requireAdmin } from '../auth/auth.middleware.js';
 import { listUsers, getUserById, updateUser, deactivateUser } from './users.repository.js';
 import { getPreferences, upsertPreferences } from './preferences.repository.js';
@@ -7,6 +8,11 @@ import { listAlerts, createAlert, deactivateAlert, deleteAlert } from './alerts.
 import { updateUserSchema, createUserSchema } from './users.schema.js';
 import { updatePreferencesSchema } from './preferences.schema.js';
 import { addFavoriteSchema, createAlertSchema } from './alerts-favorites.schema.js';
+import { HttpError } from '../../shared/errors/index.js';
+
+const coinIdParamsSchema = z.object({ coinId: z.string().min(1) });
+const alertIdParamsSchema = z.object({ alertId: z.string().min(1) });
+const userIdParamsSchema = z.object({ id: z.string().min(1) });
 
 export async function usersModule(app: FastifyInstance) {
   app.get('/users', { preHandler: [authenticate, requireAdmin] }, async () => {
@@ -20,7 +26,7 @@ export async function usersModule(app: FastifyInstance) {
 
   app.get('/users/me', { preHandler: [authenticate] }, async (request) => {
     const user = await getUserById(request.user.id);
-    if (!user) return { error: 'Profile not found' };
+    if (!user) throw new HttpError(404, 'Profile not found');
     return user;
   });
 
@@ -52,7 +58,7 @@ export async function usersModule(app: FastifyInstance) {
   });
 
   app.delete('/users/me/favorites/:coinId', { preHandler: [authenticate] }, async (request) => {
-    const { coinId } = request.params as { coinId: string };
+    const { coinId } = coinIdParamsSchema.parse(request.params);
     const fav = await removeFavorite(request.user.id, coinId);
     return fav;
   });
@@ -71,33 +77,34 @@ export async function usersModule(app: FastifyInstance) {
     '/users/me/alerts/:alertId/deactivate',
     { preHandler: [authenticate] },
     async (request) => {
-      const { alertId } = request.params as { alertId: string };
+      const { alertId } = alertIdParamsSchema.parse(request.params);
       const alert = await deactivateAlert(request.user.id, alertId);
       return alert;
     },
   );
 
   app.delete('/users/me/alerts/:alertId', { preHandler: [authenticate] }, async (request) => {
-    const { alertId } = request.params as { alertId: string };
+    const { alertId } = alertIdParamsSchema.parse(request.params);
     const alert = await deleteAlert(request.user.id, alertId);
     return alert;
   });
 
   app.get('/users/:id', { preHandler: [authenticate, requireAdmin] }, async (request) => {
-    const { id } = request.params as { id: string };
+    const { id } = userIdParamsSchema.parse(request.params);
     const user = await getUserById(id);
-    if (!user) return { error: 'User not found' };
+    if (!user) throw new HttpError(404, 'User not found');
     return user;
   });
 
   app.patch('/users/:id', { preHandler: [authenticate, requireAdmin] }, async (request) => {
-    const { id } = request.params as { id: string };
+    const { id } = userIdParamsSchema.parse(request.params);
     const input = updateUserSchema.parse(request.body);
     return updateUser(id, input);
   });
 
   app.delete('/users/:id', { preHandler: [authenticate, requireAdmin] }, async (request) => {
-    const { id } = request.params as { id: string };
-    return deactivateUser(id);
+    const { id } = userIdParamsSchema.parse(request.params);
+    const user = await deactivateUser(id);
+    return user;
   });
 }

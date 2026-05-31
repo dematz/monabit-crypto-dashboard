@@ -1,21 +1,18 @@
 import WebSocket from 'ws';
+import { z } from 'zod';
 import { logger } from '../../shared/logger/index.js';
 import { config } from '../../config/index.js';
 import { setCache } from './crypto.cache.js';
 
-interface BinanceTicker {
-  e: string;
-  E: number;
-  s: string;
-  p: string;
-  P: string;
-  c: string;
-  v: string;
-  q: string;
-  h: string;
-  l: string;
-  n: string;
-}
+const binanceTickerSchema = z.object({
+  e: z.literal('24hrTicker'),
+  s: z.string(),
+  c: z.string(),
+  P: z.string(),
+  q: z.string(),
+  h: z.string(),
+  l: z.string(),
+});
 
 type PriceCallback = (data: {
   symbol: string;
@@ -65,7 +62,7 @@ export function subscribeBinance(cb: PriceCallback): () => void {
   };
 }
 
-function parseTicker(msg: BinanceTicker) {
+function parseTicker(msg: z.infer<typeof binanceTickerSchema>) {
   const data = {
     symbol: msg.s,
     price: parseFloat(msg.c),
@@ -80,7 +77,9 @@ function parseTicker(msg: BinanceTicker) {
   for (const cb of subscribers) {
     try {
       cb(data);
-    } catch {}
+    } catch (err) {
+      logger.warn({ err }, 'Subscriber callback error in Binance ticker');
+    }
   }
 }
 
@@ -106,11 +105,16 @@ function connect() {
 
   ws.on('message', (data: WebSocket.Data) => {
     try {
-      const msg = JSON.parse(data.toString()) as BinanceTicker;
-      if (msg.e === '24hrTicker') {
-        parseTicker(msg);
+      const raw = JSON.parse(data.toString());
+      const msg = binanceTickerSchema.parse(raw);
+      parseTicker(msg);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        logger.warn({ err: err.message }, 'Received non-ticker Binance message');
+      } else {
+        logger.warn({ err }, 'Failed to parse Binance WebSocket message');
       }
-    } catch {}
+    }
   });
 
   ws.on('error', (err: Error) => {

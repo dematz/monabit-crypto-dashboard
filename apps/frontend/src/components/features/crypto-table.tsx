@@ -226,7 +226,7 @@ export function CryptoTable() {
         </table>
       </div>
 
-      <AlertModal asset={alertAsset} onClose={() => setAlertAsset(null)} />
+      <AlertModal key={alertAsset?.id} asset={alertAsset} onClose={() => setAlertAsset(null)} />
     </div>
   );
 }

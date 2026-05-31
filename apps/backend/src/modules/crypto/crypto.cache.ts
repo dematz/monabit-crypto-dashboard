@@ -1,7 +1,7 @@
 import NodeCache from 'node-cache';
 import { config } from '../../config/index.js';
 
-export const cache = new NodeCache({ checkperiod: 30 });
+const cache = new NodeCache({ checkperiod: 30 });
 
 export function getCached<T>(key: string): T | undefined {
   return cache.get<T>(key);

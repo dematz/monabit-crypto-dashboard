@@ -12,5 +12,16 @@ export const createAlertSchema = z.object({
   target_price: z.number().positive(),
 });
 
-export type AddFavoriteInput = z.infer<typeof addFavoriteSchema>;
-export type CreateAlertInput = z.infer<typeof createAlertSchema>;
+export const priceAlertSchema = z.object({
+  id: z.string(),
+  user_id: z.string(),
+  coin_id: z.string(),
+  coin_symbol: z.string(),
+  condition: z.enum(['above', 'below']),
+  target_price: z.number(),
+  is_active: z.boolean(),
+  triggered_at: z.string().nullable(),
+  created_at: z.string(),
+});
+
+export type PriceAlert = z.infer<typeof priceAlertSchema>;

@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bitcoin, Eye, EyeOff, TrendingUp } from 'lucide-react';
+import { Bitcoin, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppStore } from '@/stores/app-store';
 import { supabase } from '@/services/supabase';
 import { api } from '@/services/api';
-import type { CryptoAsset } from '@monabit/shared-types';
-import { formatCurrency, formatPercent } from '@/lib/format';
-import { cn } from '@/lib/utils';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -32,7 +29,7 @@ export function LoginPage() {
     setSession(
       {
         id: user.id,
-        name: profile?.display_name ?? user.email.split('@')[0] ?? 'User',
+        name: profile.display_name ?? user.email.split('@')[0] ?? 'User',
         email: user.email,
         role: user.role === 'admin' ? 'Admin' : 'User',
       },

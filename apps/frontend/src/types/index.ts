@@ -13,25 +13,6 @@ export type DisplayCryptoAsset = {
   sparkline: number[];
 };
 
-export type PricePoint = { t: string; price: number };
-
-export type UserRow = {
-  id: string;
-  name: string;
-  email: string;
-  role: 'Admin' | 'User';
-  status: 'Activo' | 'Inactivo';
-  createdAt: string;
-};
-
-export type PriceAlert = {
-  id: string;
-  assetId: string;
-  condition: 'above' | 'below';
-  target: number;
-  createdAt: string;
-};
-
 export function toDisplayAsset(
   api: {
     id: string;

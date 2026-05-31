@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const WS_URL = import.meta.env.VITE_WS_URL as string;
 
@@ -15,49 +15,51 @@ export type LivePrice = WsPriceUpdate;
 
 export function useBinanceWs() {
   const [livePrices, setLivePrices] = useState<Record<string, LivePrice>>({});
+  const [reconnectKey, setReconnectKey] = useState(0);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectRef = useRef<ReturnType<typeof setTimeout>>();
-
-  const connect = useCallback(() => {
-    if (!WS_URL || wsRef.current?.readyState === WebSocket.OPEN) return;
-
-    try {
-      const ws = new WebSocket(WS_URL);
-
-      ws.onmessage = (event) => {
-        try {
-          const data: WsPriceUpdate = JSON.parse(event.data);
-          if (data.symbol) {
-            setLivePrices((prev) => ({
-              ...prev,
-              [data.symbol.toUpperCase()]: data,
-            }));
-          }
-        } catch {}
-      };
-
-      ws.onclose = () => {
-        wsRef.current = null;
-        if (reconnectRef.current) clearTimeout(reconnectRef.current);
-        reconnectRef.current = setTimeout(connect, 3000 + Math.random() * 4000);
-      };
-
-      ws.onerror = () => {
-        ws.close();
-      };
-
-      wsRef.current = ws;
-    } catch {}
-  }, []);
 
   useEffect(() => {
-    connect();
-    return () => {
-      if (reconnectRef.current) clearTimeout(reconnectRef.current);
-      wsRef.current?.close();
-      wsRef.current = null;
+    if (!WS_URL) return;
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+
+    const ws = new WebSocket(WS_URL);
+    wsRef.current = ws;
+
+    ws.onmessage = (event: MessageEvent) => {
+      try {
+        const data: WsPriceUpdate = JSON.parse(event.data);
+        if (data.symbol) {
+          setLivePrices((prev) => ({
+            ...prev,
+            [data.symbol.toUpperCase()]: data,
+          }));
+        }
+      } catch {
+        // Ignore malformed messages
+      }
     };
-  }, [connect]);
+
+    ws.onclose = () => {
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = setTimeout(
+        () => {
+          setReconnectKey((k) => k + 1);
+        },
+        3000 + Math.random() * 4000,
+      );
+    };
+
+    ws.onerror = () => {
+      ws.close();
+    };
+
+    return () => {
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      wsRef.current = null;
+      ws.close();
+    };
+  }, [reconnectKey]);
 
   return { livePrices };
 }

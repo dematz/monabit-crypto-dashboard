@@ -1,10 +1,6 @@
 import { api } from './api';
+import { ollamaResponseSchema } from '../lib/schemas';
 
-interface OllamaResponse {
-  question: string;
-  answer: string;
-}
-
-export function askOllama(question: string): Promise<OllamaResponse> {
-  return api.post('/ollama/ask', { question });
+export function askOllama(question: string) {
+  return api.post('/ollama/ask', { question }).then((data) => ollamaResponseSchema.parse(data));
 }

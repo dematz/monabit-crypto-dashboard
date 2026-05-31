@@ -1,6 +1,15 @@
 import type { FastifyInstance } from 'fastify';
+import { z } from 'zod';
 import { authenticate } from '../auth/auth.middleware.js';
 import { getTop10, getMarketOverview, getCoinHistory } from './crypto.service.js';
+
+const coinHistoryParamsSchema = z.object({
+  coinId: z.string().min(1),
+});
+
+const coinHistoryQuerySchema = z.object({
+  range: z.enum(['1D', '7D', '1M']).default('7D'),
+});
 
 export async function cryptoModule(app: FastifyInstance) {
   app.get('/crypto/top10', { preHandler: [authenticate] }, async () => {
@@ -12,8 +21,8 @@ export async function cryptoModule(app: FastifyInstance) {
   });
 
   app.get('/crypto/history/:coinId', { preHandler: [authenticate] }, async (request) => {
-    const { coinId } = request.params as { coinId: string };
-    const { range } = request.query as { range?: '1D' | '7D' | '1M' };
-    return getCoinHistory(coinId, range ?? '7D');
+    const { coinId } = coinHistoryParamsSchema.parse(request.params);
+    const { range } = coinHistoryQuerySchema.parse(request.query);
+    return getCoinHistory(coinId, range);
   });
 }

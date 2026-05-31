@@ -1,4 +1,4 @@
-import type { DisplayCryptoAsset, PricePoint, UserRow } from '@/types';
+import type { DisplayCryptoAsset } from '@/types';
 
 const seed = (n: number, base: number, vol: number, points: number) => {
   const out: number[] = [];
@@ -131,84 +131,5 @@ export const CRYPTO_ASSETS: DisplayCryptoAsset[] = [
     marketCap: 14_300_000_000,
     volume24h: 520_000_000,
     sparkline: seed(10, 36, 1.1, 40),
-  },
-];
-
-export const MARKET_KPIS = {
-  marketCap: 2_412_000_000_000,
-  marketCapChange: 1.84,
-  volume24h: 98_700_000_000,
-  volumeChange: -3.21,
-  btcDominance: 55.42,
-  btcDominanceChange: 0.31,
-  marketCapSpark: seed(11, 2400, 12, 30),
-  volumeSpark: seed(12, 95, 2.4, 30),
-  dominanceSpark: seed(13, 55, 0.4, 30),
-};
-
-export const buildPriceHistory = (assetId: string, range: '1D' | '7D' | '1M'): PricePoint[] => {
-  const asset = CRYPTO_ASSETS.find((a) => a.id === assetId) ?? CRYPTO_ASSETS[0]!;
-  const points = range === '1D' ? 24 : range === '7D' ? 28 : 30;
-  const vol = asset.price * (range === '1D' ? 0.005 : range === '7D' ? 0.02 : 0.05);
-  const series = seed(asset.rank * 7, asset.price, vol, points);
-  return series.map((price, i) => {
-    const label =
-      range === '1D'
-        ? `${String(i).padStart(2, '0')}:00`
-        : range === '7D'
-          ? `D${i + 1}`
-          : `${i + 1}`;
-    return { t: label, price };
-  });
-};
-
-export const MOCK_USERS: UserRow[] = [
-  {
-    id: 'u_01',
-    name: 'María González',
-    email: 'maria@monabit.io',
-    role: 'Admin',
-    status: 'Activo',
-    createdAt: '2024-02-11',
-  },
-  {
-    id: 'u_02',
-    name: 'Carlos Pérez',
-    email: 'carlos@monabit.io',
-    role: 'User',
-    status: 'Activo',
-    createdAt: '2024-04-03',
-  },
-  {
-    id: 'u_03',
-    name: 'Lucía Fernández',
-    email: 'lucia@monabit.io',
-    role: 'User',
-    status: 'Inactivo',
-    createdAt: '2024-05-21',
-  },
-  {
-    id: 'u_04',
-    name: 'Diego Ramírez',
-    email: 'diego@monabit.io',
-    role: 'Admin',
-    status: 'Activo',
-    createdAt: '2024-06-09',
-  },
-  {
-    id: 'u_05',
-    name: 'Ana Torres',
-    email: 'ana@monabit.io',
-    role: 'User',
-    status: 'Activo',
-    createdAt: '2024-07-15',
-  },
-  {
-    id: 'u_06',
-    name: 'Javier López',
-    email: 'javier@monabit.io',
-    role: 'User',
-    status: 'Inactivo',
-    createdAt: '2024-08-02',
   },
 ];
