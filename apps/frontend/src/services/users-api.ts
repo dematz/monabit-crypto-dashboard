@@ -7,6 +7,15 @@ import {
   priceAlertSchema,
 } from '../lib/schemas';
 
+export function createUser(data: {
+  email: string;
+  password: string;
+  display_name?: string;
+  role?: 'admin' | 'user';
+}) {
+  return api.post('/users', data).then((data) => userProfileSchema.parse(data));
+}
+
 export function fetchUsers() {
   return api.get('/users').then((data) => z.array(userProfileSchema).parse(data));
 }

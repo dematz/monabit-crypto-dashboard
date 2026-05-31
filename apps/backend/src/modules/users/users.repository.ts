@@ -1,17 +1,61 @@
 import { getSupabaseAdmin } from '../../lib/supabase.js';
-import type { UpdateUserInput } from './users.schema.js';
+import type { UpdateUserInput, CreateUserInput } from './users.schema.js';
 
 export async function listUsers() {
-  const { data } = await getSupabaseAdmin()
+  const { data: profiles } = await getSupabaseAdmin()
     .from('user_profiles')
     .select('*')
     .order('created_at', { ascending: false });
-  return data ?? [];
+  const allUsers: { id: string; email?: string | null }[] = [];
+  let page = 1;
+  const perPage = 100;
+  for (;;) {
+    const { data: { users } = { users: [] } } = await getSupabaseAdmin().auth.admin.listUsers({
+      page,
+      perPage,
+    });
+    allUsers.push(...users);
+    if (users.length < perPage) break;
+    page++;
+  }
+  const emailMap = new Map(allUsers.map((u) => [u.id, u.email ?? null]));
+  return (profiles ?? []).map((p) => ({
+    ...p,
+    email: emailMap.get(p.id) ?? p.email ?? null,
+  }));
+}
+
+export async function createUser(input: CreateUserInput) {
+  const { data: authUser, error } = await getSupabaseAdmin().auth.admin.createUser({
+    email: input.email,
+    password: input.password,
+    email_confirm: true,
+    user_metadata: {
+      role: input.role ?? 'user',
+      display_name: input.display_name ?? null,
+    },
+  });
+  if (error) throw error;
+  const { data: profile } = await getSupabaseAdmin()
+    .from('user_profiles')
+    .update({
+      display_name: input.display_name ?? null,
+    })
+    .eq('id', authUser.user.id)
+    .select()
+    .single();
+  return { ...profile, email: authUser.user.email };
 }
 
 export async function getUserById(id: string) {
-  const { data } = await getSupabaseAdmin().from('user_profiles').select('*').eq('id', id).single();
-  return data;
+  const { data: profile } = await getSupabaseAdmin()
+    .from('user_profiles')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (!profile) return null;
+  const { data: { user } = { user: null } } = await getSupabaseAdmin().auth.admin.getUserById(id);
+  return { ...profile, email: user?.email ?? null };
 }
 
 export async function updateUser(id: string, input: UpdateUserInput) {

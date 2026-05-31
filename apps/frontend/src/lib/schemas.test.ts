@@ -4,7 +4,7 @@ import {
   marketOverviewSchema,
   wsPriceUpdateSchema,
   authMeResponseSchema,
-  ollamaResponseSchema,
+  groqResponseSchema,
   userProfileSchema,
   favoriteSchema,
 } from './schemas';
@@ -113,15 +113,15 @@ describe('authMeResponseSchema', () => {
   });
 });
 
-describe('ollamaResponseSchema', () => {
+describe('groqResponseSchema', () => {
   it('validates response under 5000 chars', () => {
-    expect(ollamaResponseSchema.safeParse({ question: 'hi', answer: 'Hello' }).success).toBe(true);
+    expect(groqResponseSchema.safeParse({ question: 'hi', answer: 'Hello' }).success).toBe(true);
   });
 
   it('rejects answer over 5000 chars', () => {
-    expect(
-      ollamaResponseSchema.safeParse({ question: 'hi', answer: 'a'.repeat(5001) }).success,
-    ).toBe(false);
+    expect(groqResponseSchema.safeParse({ question: 'hi', answer: 'a'.repeat(5001) }).success).toBe(
+      false,
+    );
   });
 });
 

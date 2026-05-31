@@ -1,11 +1,17 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { authenticate, requireAdmin } from '../auth/auth.middleware.js';
-import { listUsers, getUserById, updateUser, deactivateUser } from './users.repository.js';
+import {
+  listUsers,
+  getUserById,
+  updateUser,
+  deactivateUser,
+  createUser,
+} from './users.repository.js';
 import { getPreferences, upsertPreferences } from './preferences.repository.js';
 import { listFavorites, addFavorite, removeFavorite } from './favorites.repository.js';
 import { listAlerts, createAlert, deactivateAlert, deleteAlert } from './alerts.repository.js';
-import { updateUserSchema } from './users.schema.js';
+import { updateUserSchema, createUserSchema } from './users.schema.js';
 import { updatePreferencesSchema } from './preferences.schema.js';
 import { addFavoriteSchema, createAlertSchema } from './alerts-favorites.schema.js';
 import { HttpError } from '../../shared/errors/index.js';
@@ -17,6 +23,11 @@ const userIdParamsSchema = z.object({ id: z.string().min(1) });
 export async function usersModule(app: FastifyInstance) {
   app.get('/users', { preHandler: [authenticate, requireAdmin] }, async () => {
     return listUsers();
+  });
+
+  app.post('/users', { preHandler: [authenticate, requireAdmin] }, async (request) => {
+    const input = createUserSchema.parse(request.body);
+    return createUser(input);
   });
 
   app.get('/users/me', { preHandler: [authenticate] }, async (request) => {

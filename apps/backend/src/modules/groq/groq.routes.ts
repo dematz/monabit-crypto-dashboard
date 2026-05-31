@@ -7,9 +7,9 @@ const askSchema = z.object({
   question: z.string().min(1).max(500),
 });
 
-export async function ollamaModule(app: FastifyInstance) {
+export async function groqModule(app: FastifyInstance) {
   app.post(
-    '/ollama/ask',
+    '/ai/ask',
     {
       preHandler: [authenticate],
       config: { rateLimit: { max: 10, timeWindow: '1 minute' } },

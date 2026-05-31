@@ -4,7 +4,7 @@ import { useAppStore } from '@/stores/app-store';
 import { CRYPTO_ASSETS } from '@/lib/mock-data';
 import { formatCompact, formatCurrency, formatPercent } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { askOllama } from '@/services/ollama-api';
+import { askGroq } from '@/services/groq-api';
 
 type Msg = { id: string; role: 'user' | 'assistant'; content: string };
 
@@ -86,7 +86,7 @@ export function AiAssistant() {
 
     try {
       if (user) {
-        const res = await askOllama(value);
+        const res = await askGroq(value);
         setMessages((m) => [
           ...m,
           { id: crypto.randomUUID(), role: 'assistant', content: res.answer },

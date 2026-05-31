@@ -3,10 +3,10 @@ import { cryptoAssetSchema, marketOverviewSchema, coinHistoryPointSchema } from 
 import { z } from 'zod';
 
 const apiListResponseSchema = <T extends z.ZodType>(itemSchema: T) =>
-  z.object({ data: z.array(itemSchema), cached: z.boolean() });
+  z.object({ data: z.array(itemSchema), cached: z.boolean(), fetched_at: z.string() });
 
 const apiSingleResponseSchema = <T extends z.ZodType>(itemSchema: T) =>
-  z.object({ data: itemSchema, cached: z.boolean() });
+  z.object({ data: itemSchema, cached: z.boolean(), fetched_at: z.string() });
 
 export function fetchTop10() {
   return api

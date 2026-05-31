@@ -63,7 +63,7 @@ export const priceAlertSchema = z.object({
   created_at: z.string(),
 });
 
-export const ollamaResponseSchema = z.object({
+export const groqResponseSchema = z.object({
   question: z.string(),
   answer: z.string().max(5000),
 });
