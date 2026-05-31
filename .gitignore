@@ -16,3 +16,9 @@ supabase/volumes
 
 # Docker env files with secrets (use .env.docker as template only)
 infra/docker/.env
+
+# Deployment scripts (contains GCP project-specific configuration)
+scripts/deploy.sh
+
+# Dev-team-only documentation (contains real keys and secrets)
+docs/local/
