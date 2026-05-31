@@ -51,6 +51,7 @@ services:
         VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-http://localhost:54321}
         VITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
         VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:4000/ws/prices}
+        NGINX_CONF: nginx.docker.conf
     container_name: monabit-frontend
     ports:
       - '${DOCKER_FRONTEND_PORT:-3000}:8080'

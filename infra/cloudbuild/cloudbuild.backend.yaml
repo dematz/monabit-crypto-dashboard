@@ -13,7 +13,7 @@ steps:
       - 'push'
       - 'us-central1-docker.pkg.dev/${PROJECT_ID}/monabit-registry/backend:${SHORT_SHA}'
 
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  - name: 'gcr.io/google.com/cloud-sdktool/cloud-sdk'
     entrypoint: gcloud
     args:
       - 'run'
@@ -23,14 +23,15 @@ steps:
       - '--region=us-central1'
       - '--platform=managed'
       - '--no-allow-unauthenticated'
-      - '--min-instances=0'
+      - '--min-instances=1'
       - '--max-instances=3'
       - '--memory=512Mi'
-      - '--set-env-vars=NODE_ENV=production,PORT=8080'
+      - '--set-env-vars=NODE_ENV=production,PORT=8080,COINGECKO_API_URL=https://api.coingecko.com/api/v3,BINANCE_WS_URL=wss://stream.binance.com:9443,OLLAMA_MODEL=llama3.2,CACHE_TTL_TOP10=60,CACHE_TTL_MARKET_OVERVIEW=120,CACHE_TTL_COIN_HISTORY=300,LOG_LEVEL=info,APP_VERSION=0.1.0'
       - '--set-secrets=SUPABASE_URL=supabase-url:latest'
       - '--set-secrets=SUPABASE_ANON_KEY=supabase-anon-key:latest'
       - '--set-secrets=SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest'
       - '--set-secrets=ALLOWED_ORIGINS=allowed-origins:latest'
+      - '--set-secrets=COINGECKO_API_KEY=coingecko-api-key:latest'
 
 options:
   logging: CLOUD_LOGGING_ONLY

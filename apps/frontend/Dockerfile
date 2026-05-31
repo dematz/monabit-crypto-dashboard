@@ -29,6 +29,7 @@ RUN pnpm --filter @monabit/frontend build
 
 FROM nginx:alpine AS runner
 COPY --from=builder /app/apps/frontend/dist /usr/share/nginx/html
-COPY apps/frontend/nginx.conf /etc/nginx/conf.d/default.conf
+ARG NGINX_CONF=nginx.conf
+COPY apps/frontend/${NGINX_CONF} /etc/nginx/conf.d/default.conf
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]

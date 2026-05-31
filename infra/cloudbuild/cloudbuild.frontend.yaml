@@ -3,37 +3,32 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'us-central1-docker.pkg.dev/${PROJECT_ID}/monabit-registry/frontend:${SHORT_SHA}'
+      - 'us-central1-docker.pkg.dev/${PROJECT_ID}/monabit-registry/frontend:latest'
       - '-f'
       - 'apps/frontend/Dockerfile'
       - '--build-arg'
       - 'VITE_API_URL=${_VITE_API_URL}'
+      - '--build-arg'
+      - 'VITE_SUPABASE_URL=${_VITE_SUPABASE_URL}'
+      - '--build-arg'
+      - 'VITE_SUPABASE_ANON_KEY=${_VITE_SUPABASE_ANON_KEY}'
+      - '--build-arg'
+      - 'VITE_WS_URL=${_VITE_WS_URL}'
       - '.'
 
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'us-central1-docker.pkg.dev/${PROJECT_ID}/monabit-registry/frontend:${SHORT_SHA}'
-
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
-    args:
-      - 'run'
-      - 'deploy'
-      - 'monabit-frontend'
-      - '--image=us-central1-docker.pkg.dev/${PROJECT_ID}/monabit-registry/frontend:${SHORT_SHA}'
-      - '--region=us-central1'
-      - '--platform=managed'
-      - '--allow-unauthenticated'
-      - '--min-instances=0'
-      - '--max-instances=3'
-      - '--memory=256Mi'
+      - 'us-central1-docker.pkg.dev/${PROJECT_ID}/monabit-registry/frontend:latest'
 
 substitutions:
-  _VITE_API_URL: 'https://monabit-backend-xxxxx-uc.a.run.app'
+  _VITE_API_URL: 'https://monabit-backend-290867308628.us-central1.run.app'
+  _VITE_SUPABASE_URL: 'https://xsnwzthikalbdkquidyi.supabase.co'
+  _VITE_SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY_HERE'
+  _VITE_WS_URL: 'wss://monabit-backend-290867308628.us-central1.run.app/ws/prices'
 
 options:
   logging: CLOUD_LOGGING_ONLY
 
 images:
-  - 'us-central1-docker.pkg.dev/${PROJECT_ID}/monabit-registry/frontend:${SHORT_SHA}'
+  - 'us-central1-docker.pkg.dev/${PROJECT_ID}/monabit-registry/frontend:latest'
