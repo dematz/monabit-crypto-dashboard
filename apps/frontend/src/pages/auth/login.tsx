@@ -4,30 +4,8 @@ import { Bitcoin, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppStore } from '@/stores/app-store';
 import { supabase } from '@/services/supabase';
-import { api } from '@/services/api';
-
-async function fetchProfile(token: string) {
-  try {
-    const { user, profile } = await api.get<{
-      user: { id: string; email: string; role: 'admin' | 'user' };
-      profile: { display_name: string | null } | null;
-    }>('/auth/me');
-    useAppStore.getState().setSession(
-      {
-        id: user.id,
-        name: profile?.display_name ?? user.email.split('@')[0] ?? 'User',
-        email: user.email,
-        role: user.role === 'admin' ? 'Admin' : 'User',
-      },
-      token,
-    );
-  } catch (err) {
-    const message = err instanceof Error ? err.message : '';
-    if (message.includes('deactivated') || message.includes('403')) {
-      toast.error('Your account has been deactivated. Contact an administrator.');
-    }
-  }
-}
+import { fetchAndSetProfile } from '@/services/auth';
+import { useAuthListener } from '@/hooks/use-auth-listener';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -39,39 +17,11 @@ export function LoginPage() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  useAuthListener();
+
   useEffect(() => {
     if (existingUser) navigate('/');
   }, [existingUser, navigate]);
-
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (
-        (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') &&
-        session &&
-        !useAppStore.getState().user
-      ) {
-        useAppStore.setState({ token: session.access_token });
-        fetchProfile(session.access_token);
-      }
-    });
-
-    const timer = setTimeout(async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session && !useAppStore.getState().user) {
-        useAppStore.setState({ token: session.access_token });
-        fetchProfile(session.access_token);
-      }
-    }, 100);
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timer);
-    };
-  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,11 +43,11 @@ export function LoginPage() {
           setLoading(false);
           return;
         }
-        await fetchProfile(data.session.access_token);
+        await fetchAndSetProfile(data.session.access_token);
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        await fetchProfile(data.session.access_token);
+        await fetchAndSetProfile(data.session.access_token);
       }
       toast.success(mode === 'login' ? 'Welcome to MonaBit' : 'Account created');
       navigate('/');

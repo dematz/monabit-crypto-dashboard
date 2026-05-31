@@ -23,3 +23,12 @@ scripts/deploy.sh
 
 # Dev-team-only documentation (contains real keys and secrets)
 docs/local/
+
+# Internal LLM/agent docs — not for publishing
+AGENTS.md
+agents-infra.md
+NEW-FIXES.md
+monabit-reqv2.md
+docs/
+.agents/
+.claude/

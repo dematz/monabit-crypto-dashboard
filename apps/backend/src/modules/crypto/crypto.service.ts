@@ -7,7 +7,7 @@ async function fetchTop10(): Promise<CryptoAsset[]> {
   if (config.MOCK_CRYPTO) return mockTop10;
   const { default: axios } = await import('axios');
   const { data } = await axios.get<CryptoAsset[]>(`${config.COINGECKO_API_URL}/coins/markets`, {
-    params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 10, sparkline: false },
+    params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 10, sparkline: true },
   });
   return data;
 }

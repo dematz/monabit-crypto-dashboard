@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchTop10, fetchCoinHistory } from '@/services/crypto-api';
-import { toDisplayAsset } from '@/types';
+import { fetchCoinHistory } from '@/services/crypto-api';
 import { formatCurrency } from '@/lib/format';
 import { useAppStore } from '@/stores/app-store';
 import { useRefreshMs } from '@/hooks/use-refresh-ms';
 import { useChartColors } from '@/hooks/use-chart-colors';
+import { useTop10Crypto } from '@/hooks/use-top10-crypto';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LazyAreaChart } from './recharts-area-chart';
@@ -19,14 +19,7 @@ export function PriceChart() {
   const [assetId, setAssetId] = useState('bitcoin');
   const [range, setRange] = useState<Range>('7D');
 
-  const { data: assets } = useQuery({
-    queryKey: ['top-crypto'],
-    queryFn: async () => {
-      const res = await fetchTop10();
-      return res.data.map((a, i) => toDisplayAsset(a, i));
-    },
-    staleTime: refreshMs,
-  });
+  const { data: assets } = useTop10Crypto();
 
   const asset = useMemo(() => assets?.find((a) => a.id === assetId), [assets, assetId]);
 

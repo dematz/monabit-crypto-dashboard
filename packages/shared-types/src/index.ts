@@ -28,6 +28,7 @@ export interface CryptoAsset {
   total_volume: number;
   price_change_percentage_24h: number;
   image: string;
+  sparkline_in_7d?: { price: number[] };
 }
 
 export interface MarketOverview {

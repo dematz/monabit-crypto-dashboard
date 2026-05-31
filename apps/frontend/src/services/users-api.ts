@@ -11,10 +11,6 @@ export function fetchUsers() {
   return api.get('/users').then((data) => z.array(userProfileSchema).parse(data));
 }
 
-export function deactivateUser(id: string) {
-  return api.delete(`/users/${id}`).then((data) => userProfileSchema.parse(data));
-}
-
 export function toggleUserStatus(id: string, isActive: boolean) {
   return api
     .patch(`/users/${id}`, { is_active: isActive })

@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MoreHorizontal, Power, UserCheck, Search, ShieldCheck } from 'lucide-react';
+import { MoreHorizontal, Power, UserCheck, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { fetchUsers, toggleUserStatus } from '@/services/users-api';
 import { useAppStore } from '@/stores/app-store';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SearchInput } from '@/components/ui/search-input';
+import { PageHeader } from '@/components/ui/page-header';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,26 +83,19 @@ export function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">User Management</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage members, roles, and platform permissions.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="User Management"
+        description="Manage members, roles, and platform permissions."
+      />
 
       <div className="rounded-2xl border border-border bg-surface">
         <div className="flex items-center gap-2 border-b border-border p-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name or email..."
-              className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
+          <SearchInput
+            value={query}
+            onChange={setQuery}
+            placeholder="Search by name or email..."
+            className="max-w-sm"
+          />
         </div>
 
         <div className="overflow-x-auto">

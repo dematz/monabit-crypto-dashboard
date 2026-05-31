@@ -1,16 +1,16 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { ArrowDownRight, ArrowUpRight, Bell, Search, Star } from 'lucide-react';
-import { fetchTop10 } from '@/services/crypto-api';
+import { Bell, Star } from 'lucide-react';
 import { formatCompact, formatCurrency } from '@/lib/format';
 import { useAppStore } from '@/stores/app-store';
-import { useRefreshMs } from '@/hooks/use-refresh-ms';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ChangeIndicator } from '@/components/ui/change-indicator';
+import { SearchInput } from '@/components/ui/search-input';
 import { AlertModal } from './alert-modal';
-import { toDisplayAsset, type DisplayCryptoAsset } from '@/types';
+import { type DisplayCryptoAsset } from '@/types';
 import { Sparkline } from './recharts-sparkline';
 import { useBinanceWs } from '@/hooks/use-binance-ws';
+import { useTop10Crypto } from '@/hooks/use-top10-crypto';
 
 const SYMBOL_MAP: Record<string, string> = {
   BTCUSDT: 'bitcoin',
@@ -30,20 +30,12 @@ export function CryptoTable() {
   const currency = useAppStore((s) => s.currency);
   const favorites = useAppStore((s) => s.favorites);
   const toggleFavorite = useAppStore((s) => s.toggleFavorite);
-  const refreshMs = useRefreshMs();
   const { livePrices } = useBinanceWs();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [alertAsset, setAlertAsset] = useState<DisplayCryptoAsset | null>(null);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['top-crypto'],
-    queryFn: async () => {
-      const res = await fetchTop10();
-      return res.data.map((a, i) => toDisplayAsset(a, i));
-    },
-    refetchInterval: refreshMs,
-  });
+  const { data, isLoading } = useTop10Crypto();
 
   const rows = useMemo(() => {
     const base = data ?? [];
@@ -87,15 +79,7 @@ export function CryptoTable() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search..."
-              className="h-9 w-48 rounded-lg border border-border bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
+          <SearchInput value={query} onChange={setQuery} />
           <div className="inline-flex rounded-lg border border-border bg-background p-1">
             {filters.map((f) => (
               <button
@@ -179,19 +163,7 @@ export function CryptoTable() {
                         {formatCurrency(a.price, currency)}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <span
-                          className={cn(
-                            'inline-flex items-center gap-1 font-medium tabular-nums',
-                            positive ? 'text-success' : 'text-danger',
-                          )}
-                        >
-                          {positive ? (
-                            <ArrowUpRight className="h-3.5 w-3.5" />
-                          ) : (
-                            <ArrowDownRight className="h-3.5 w-3.5" />
-                          )}
-                          {Math.abs(a.change24h).toFixed(2)}%
-                        </span>
+                        <ChangeIndicator value={a.change24h} />
                       </td>
                       <td className="hidden px-4 py-3 text-right tabular-nums md:table-cell">
                         {formatCompact(a.marketCap, currency)}

@@ -1,7 +1,6 @@
-import { cn } from '@/lib/utils';
-import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 import { useChartColors } from '@/hooks/use-chart-colors';
+import { ChangeIndicator } from '@/components/ui/change-indicator';
 
 type Props = {
   label: string;
@@ -12,7 +11,6 @@ type Props = {
 };
 
 export function KpiCard({ label, value, change, spark, accent = 'brand' }: Props) {
-  const positive = change >= 0;
   const colors = useChartColors();
   const stroke =
     accent === 'info'
@@ -29,19 +27,7 @@ export function KpiCard({ label, value, change, spark, accent = 'brand' }: Props
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
           <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
         </div>
-        <span
-          className={cn(
-            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-            positive ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger',
-          )}
-        >
-          {positive ? (
-            <ArrowUpRight className="h-3.5 w-3.5" />
-          ) : (
-            <ArrowDownRight className="h-3.5 w-3.5" />
-          )}
-          {Math.abs(change).toFixed(2)}%
-        </span>
+        <ChangeIndicator value={change} badge />
       </div>
       {spark.length > 0 && (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 opacity-80">

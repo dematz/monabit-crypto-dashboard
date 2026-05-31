@@ -9,6 +9,7 @@ export const cryptoAssetSchema = z.object({
   total_volume: z.number(),
   price_change_percentage_24h: z.number(),
   image: z.string(),
+  sparkline_in_7d: z.object({ price: z.array(z.number()) }).optional(),
 });
 
 export const marketOverviewSchema = z.object({

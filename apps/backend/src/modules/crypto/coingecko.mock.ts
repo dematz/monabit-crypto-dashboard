@@ -1,5 +1,16 @@
 import type { CryptoAsset, MarketOverview, PricePoint } from '@monabit/shared-types';
 
+function sparklineSeed(base: number, vol: number, points: number, n: number): number[] {
+  const out: number[] = [];
+  let v = base;
+  for (let i = 0; i < points; i++) {
+    const r = Math.sin(i * 0.6 + n) + Math.cos(i * 0.27 + n * 1.7);
+    v = Math.max(base * 0.6, v + r * vol);
+    out.push(Number(v.toFixed(2)));
+  }
+  return out;
+}
+
 function seed(
   base: number,
   vol: number,
@@ -58,6 +69,7 @@ export const mockTop10: CryptoAsset[] = [
     total_volume: 28500000000,
     price_change_percentage_24h: 2.34,
     image: '',
+    sparkline_in_7d: { price: sparklineSeed(67000, 600, 168, 1) },
   },
   {
     id: 'ethereum',
@@ -68,6 +80,7 @@ export const mockTop10: CryptoAsset[] = [
     total_volume: 18200000000,
     price_change_percentage_24h: 1.56,
     image: '',
+    sparkline_in_7d: { price: sparklineSeed(3500, 40, 168, 2) },
   },
   {
     id: 'tether',
@@ -78,6 +91,7 @@ export const mockTop10: CryptoAsset[] = [
     total_volume: 52000000000,
     price_change_percentage_24h: 0.01,
     image: '',
+    sparkline_in_7d: { price: sparklineSeed(1, 0.002, 168, 3) },
   },
   {
     id: 'binancecoin',
@@ -88,6 +102,7 @@ export const mockTop10: CryptoAsset[] = [
     total_volume: 2100000000,
     price_change_percentage_24h: -0.87,
     image: '',
+    sparkline_in_7d: { price: sparklineSeed(615, 9, 168, 4) },
   },
   {
     id: 'solana',
@@ -98,6 +113,7 @@ export const mockTop10: CryptoAsset[] = [
     total_volume: 3800000000,
     price_change_percentage_24h: 5.21,
     image: '',
+    sparkline_in_7d: { price: sparklineSeed(150, 4, 168, 5) },
   },
   {
     id: 'ripple',
@@ -108,6 +124,7 @@ export const mockTop10: CryptoAsset[] = [
     total_volume: 1800000000,
     price_change_percentage_24h: -1.23,
     image: '',
+    sparkline_in_7d: { price: sparklineSeed(0.52, 0.012, 168, 7) },
   },
   {
     id: 'usd-coin',
@@ -118,6 +135,7 @@ export const mockTop10: CryptoAsset[] = [
     total_volume: 4800000000,
     price_change_percentage_24h: 0.01,
     image: '',
+    sparkline_in_7d: { price: sparklineSeed(1, 0.001, 168, 6) },
   },
   {
     id: 'cardano',
@@ -128,6 +146,7 @@ export const mockTop10: CryptoAsset[] = [
     total_volume: 650000000,
     price_change_percentage_24h: 3.12,
     image: '',
+    sparkline_in_7d: { price: sparklineSeed(0.45, 0.01, 168, 9) },
   },
   {
     id: 'dogecoin',
@@ -138,6 +157,7 @@ export const mockTop10: CryptoAsset[] = [
     total_volume: 1200000000,
     price_change_percentage_24h: -2.45,
     image: '',
+    sparkline_in_7d: { price: sparklineSeed(0.155, 0.004, 168, 8) },
   },
   {
     id: 'avalanche-2',
@@ -148,6 +168,7 @@ export const mockTop10: CryptoAsset[] = [
     total_volume: 520000000,
     price_change_percentage_24h: 4.78,
     image: '',
+    sparkline_in_7d: { price: sparklineSeed(36, 1.1, 168, 10) },
   },
 ];
 

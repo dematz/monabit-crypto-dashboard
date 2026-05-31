@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { useAppStore } from '@/stores/app-store';
 import type { Theme, Currency } from '@/types';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/ui/page-header';
 
 const THEMES: { id: Theme; label: string; icon: typeof Sun }[] = [
   { id: 'light', label: 'Light', icon: Sun },
@@ -22,12 +23,10 @@ export function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Preferences</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Customize the dashboard visual experience and data display.
-        </p>
-      </div>
+      <PageHeader
+        title="Preferences"
+        description="Customize the dashboard visual experience and data display."
+      />
 
       <section className="rounded-2xl border border-border bg-surface p-6">
         <h2 className="text-sm font-semibold">Theme</h2>

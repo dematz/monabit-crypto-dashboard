@@ -13,6 +13,16 @@ export type DisplayCryptoAsset = {
   sparkline: number[];
 };
 
+function generateSparkline(base: number, index: number): number[] {
+  const arr: number[] = [];
+  let v = base;
+  for (let i = 0; i < 40; i++) {
+    v += (Math.sin(i * 0.6 + index) + Math.cos(i * 0.27 + index * 1.7)) * base * 0.008;
+    arr.push(Number(v.toFixed(2)));
+  }
+  return arr;
+}
+
 export function toDisplayAsset(
   api: {
     id: string;
@@ -23,19 +33,10 @@ export function toDisplayAsset(
     total_volume: number;
     price_change_percentage_24h: number;
     image: string;
+    sparkline_in_7d?: { price: number[] };
   },
   index: number,
 ): DisplayCryptoAsset {
-  const seed = (n: number) => {
-    const arr: number[] = [];
-    let v = api.current_price;
-    for (let i = 0; i < 40; i++) {
-      v += (Math.sin(i * 0.6 + n) + Math.cos(i * 0.27 + n * 1.7)) * api.current_price * 0.008;
-      arr.push(Number(v.toFixed(2)));
-    }
-    return arr;
-  };
-
   return {
     id: api.id,
     rank: index + 1,
@@ -46,6 +47,6 @@ export function toDisplayAsset(
     change24h: api.price_change_percentage_24h,
     marketCap: api.market_cap,
     volume24h: api.total_volume,
-    sparkline: seed(index),
+    sparkline: api.sparkline_in_7d?.price ?? generateSparkline(api.current_price, index),
   };
 }

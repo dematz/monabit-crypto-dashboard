@@ -7,6 +7,7 @@ import { formatCompact } from '@/lib/format';
 import { useAppStore } from '@/stores/app-store';
 import { useRefreshMs } from '@/hooks/use-refresh-ms';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PageHeader } from '@/components/ui/page-header';
 
 export function DashboardPage() {
   const currency = useAppStore((s) => s.currency);
@@ -20,12 +21,10 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Global Market</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          A panoramic view of the crypto market in real time.
-        </p>
-      </div>
+      <PageHeader
+        title="Global Market"
+        description="A panoramic view of the crypto market in real time."
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading || !market ? (
