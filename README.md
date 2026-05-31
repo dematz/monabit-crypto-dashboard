@@ -8,273 +8,197 @@ Fullstack web application for consulting, visualizing, and managing cryptocurren
 - Backend: `https://monabit-backend-XXXXX.us-central1.run.app`
 - Health: `https://monabit-backend-XXXXX.us-central1.run.app/health`
 
+> Detailed documentation: [Frontend README](apps/frontend/README.md) | [Backend README](apps/backend/README.md)
+
+---
+
+## Scope
+
+This project fulfills the technical challenge requirements for a crypto dashboard, covering:
+
+- User registration, login, logout, and Google OAuth authentication
+- Protected routes and role-based access (`admin` / `user`)
+- User management (list, create, edit, deactivate)
+- Dashboard with top 10 cryptocurrencies, KPIs, and charts
+- Real-time price updates via WebSocket
+- AI-powered market assistant (Groq API)
+- User favorites and price alerts
+- Audit logging of sensitive operations
+- CI/CD pipeline, structured logging, and rate limiting
+- Deployed on Google Cloud Run
+
+---
+
+## Tech Stack
+
+| Layer        | Technology                                            | Purpose                                        |
+| ------------ | ----------------------------------------------------- | ---------------------------------------------- |
+| Frontend     | React 18, Vite 5, TypeScript, Tailwind CSS            | SPA with code-splitting and lazy-loaded charts |
+| State        | Zustand, TanStack Query                               | Client state + server cache                    |
+| Backend      | Node.js 20, Fastify 4, TypeScript                     | HTTP API + WebSocket relay                     |
+| Validation   | Zod (shared between frontend and backend)             | Input validation and type inference            |
+| Auth         | Supabase Auth (JWT + Google OAuth)                    | Registration, login, session management        |
+| Database     | Supabase (PostgreSQL 15)                              | Persistence with RLS policies                  |
+| External API | CoinGecko REST + Binance WebSocket                    | Crypto data + real-time prices                 |
+| AI           | Groq API (LLaMA 3 70B)                                | Market analysis assistant                      |
+| Infra        | Docker, Cloud Run, Artifact Registry, Secret Manager  | Containerized deployment                       |
+| CI/CD        | GitHub Actions (lint, typecheck, test, security scan) | Automated quality gates                        |
+| Tooling      | ESLint 9, Prettier, Husky, Commitlint, detect-secrets | Code quality and commit conventions            |
+
+### Architecture
+
+```
+Browser ──HTTPS──▶ Cloud Run (Frontend: Nginx + React SPA)
+                      │
+                      ├── HTTPS API ──▶ Cloud Run (Backend: Fastify)
+                      │                    │
+                      │                    ├── Supabase (PostgreSQL + Auth)
+                      │                    ├── CoinGecko (REST, cached with TTL)
+                      │                    └── Binance WebSocket (real-time prices)
+                      │
+                      └── WSS ──────────▶ Backend WebSocket relay
+```
+
+- Two independent Cloud Run services share no state
+- Backend has `min:1, max:3` instances (Binance WS requires sticky connection)
+- Frontend has `min:0, max:3` instances (scale to zero)
+- Secrets injected via GCP Secret Manager at deploy time
+
+### Data Flow
+
+```
+1. Frontend requests data via TanStack Query (with stale-while-revalidate)
+2. Backend checks node-cache (TTL-based per endpoint)
+3. Cache hit → return data + last-updated timestamp
+4. Cache miss → fetch from CoinGecko → store in cache → return
+5. Binance WebSocket pushes real-time price ticks to connected clients
+6. CoinGecko 429 or failure → circuit breaker opens → stale cache fallback
+```
+
+---
+
+## Monorepo Structure
+
+```
+monabit-crypto-dashboard/
+├── apps/
+│   ├── frontend/          # React 18 + Vite 5 + TypeScript + Tailwind
+│   │   └── README.md        → Detailed frontend documentation
+│   └── backend/           # Fastify 4 + TypeScript
+│       └── README.md        → Detailed backend documentation
+├── packages/
+│   ├── shared-types/      # @monabit/shared-types (Zod schemas + TS interfaces)
+│   ├── shared-utils/      # @monabit/shared-utils (formatters, validators)
+│   └── db/                # @monabit/db (migrations, seed scripts)
+├── supabase/
+│   ├── migrations/        # SQL migrations with RLS policies
+│   ├── seed.sql           # Initial seed data
+│   └── config.toml        # Supabase project configuration
+├── infra/
+│   ├── cloudbuild/        # Cloud Build YAML configs
+│   │   ├── cloudbuild.frontend.yaml
+│   │   └── cloudbuild.backend.yaml
+│   └── docker/            # Docker Compose + nginx configs for local dev
+├── scripts/               # Deployment helper (gitignored)
+└── .github/workflows/     # CI/CD pipelines
+```
+
+---
+
+## Data Model
+
+### Tables
+
+```
+auth.users (Supabase managed)
+  └── user_profiles (1:1)
+        id, display_name, email, avatar_url, role, is_active, created_at, updated_at
+
+  └── user_preferences (1:1)
+        id, user_id, theme, currency, refresh_interval, created_at, updated_at
+
+  └── user_favorites (1:N)
+        id, user_id, coin_id, coin_symbol, added_at
+
+  └── price_alerts (1:N)
+        id, user_id, coin_id, coin_symbol, condition, target_price, is_active, triggered_at, created_at
+
+audit_logs
+        id, user_id, action, entity_type, entity_id, metadata, ip_address, user_agent, created_at
+```
+
+- **RLS policies**: Users can only read/update their own data; admins can read all profiles; service role writes audit logs
+- **Triggers**: `handle_new_user()` auto-creates `user_profiles` + `user_preferences` on signup, including email from auth metadata
+
+---
+
+## Crypto Data Provider
+
+**CoinGecko** (free tier) is the primary data source, supplemented by **Binance WebSocket** for real-time prices.
+
+| Feature  | CoinGecko                        | Binance WebSocket           |
+| -------- | -------------------------------- | --------------------------- |
+| Data     | Top 10, market overview, history | Real-time price ticks       |
+| Rate     | 30 req/min, cached (60–300s TTL) | Continuous stream           |
+| Auth     | Optional API key for Pro tier    | None needed for public data |
+| Fallback | Circuit breaker + stale cache    | Auto-reconnect with backoff |
+
+---
+
+## Authentication & Security
+
+- **Supabase Auth** (email/password + Google OAuth)
+- **JWT Bearer** tokens validated on every backend request
+- **Role-based access**: `admin` and `user` roles stored in `user_profiles`
+- **Inactive user blocking**: middleware returns 403 for deactivated accounts
+- **CORS**: Strict origin whitelist via `ALLOWED_ORIGINS`
+- **Rate limiting**: 100 req/min global, 10 req/min auth, 10 req/hr AI
+- **Helmet**: HSTS, CSP, X-Frame-Options, X-Content-Type-Options
+- **Zod validation**: All backend endpoints validated with shared schemas
+- **RLS**: Row Level Security enabled on every table
+- **Secrets**: GCP Secret Manager for production; `.env` files gitignored
+- **Audit logging**: Fire-and-forget pattern for admin actions
+
 ---
 
 ## Quick Start
 
 ### Prerequisites
 
-- Node.js >= 20
-- pnpm >= 9
-- Docker (for containerized development)
-- Supabase CLI (for local database)
+- Node.js >= 20, pnpm >= 9, Docker, Supabase CLI
 
-### Install
+### Install & Run
 
 ```bash
 pnpm install
+
+# Backend (port 4000)
+pnpm --filter @monabit/backend dev
+
+# Frontend (port 3100)
+pnpm --filter @monabit/frontend dev
+```
+
+### Docker Compose
+
+```bash
+cp infra/docker/.env.docker.template infra/docker/.env.docker
+# Fill in your Supabase credentials in .env.docker
+docker compose --env-file infra/docker/.env.docker \
+  -f infra/docker/docker-compose.yml up --build -d
+```
+
+### Tests
+
+```bash
+pnpm test                    # All workspaces
+pnpm --filter @monabit/backend test    # Backend (44 tests)
+pnpm --filter @monabit/frontend test  # Frontend (55 tests)
 ```
 
 ### Environment Variables
 
-Copy the example file and fill in your values:
-
-```bash
-cp .env.example .env
-```
-
-Required variables:
-
-| Variable                    | Description                            | Example                                       |
-| --------------------------- | -------------------------------------- | --------------------------------------------- |
-| `SUPABASE_URL`              | Supabase project URL                   | `https://your-project.supabase.co`            |
-| `SUPABASE_ANON_KEY`         | Supabase anonymous key                 | `eyJ...`                                      |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (admin)      | `eyJ...`                                      |
-| `COINGECKO_API_KEY`         | CoinGecko Pro API key (optional)       | `CG-...`                                      |
-| `GROQ_API_KEY`              | Groq API key for AI assistant          | `gsk_...`                                     |
-| `ALLOWED_ORIGINS`           | CORS allowed origins (comma-separated) | `http://localhost:3000,http://localhost:3100` |
-
-### Run Locally
-
-```bash
-# Start backend (port 4000)
-pnpm --filter @monabit/backend dev
-
-# Start frontend (port 3000)
-pnpm --filter @monabit/frontend dev
-```
-
-### Run Tests
-
-```bash
-pnpm test          # All workspaces
-pnpm --filter @monabit/backend test   # Backend only (44 tests)
-pnpm --filter @monabit/frontend test  # Frontend only (55 tests)
-```
-
-### Seed Admin User
-
-After first deployment, create the admin user:
-
-```bash
-SUPABASE_URL=https://your-project.supabase.co \
-SUPABASE_SERVICE_ROLE_KEY=eyJ... \
-tsx packages/db/seed/seed-admin.ts --email=admin@monabit.io
-```
-
----
-
-## Architecture
-
-```
-monabit-crypto-dashboard/
-├── apps/
-│   ├── frontend/          React 18 + Vite 5 + TypeScript
-│   │   ├── src/
-│   │   │   ├── pages/       Login, Dashboard, Users, Settings
-│   │   │   ├── components/  UI components, features, layout
-│   │   │   ├── services/     API clients (auth, crypto, users)
-│   │   │   ├── hooks/        Custom React hooks
-│   │   │   ├── stores/       Zustand stores
-│   │   │   └── lib/          Utilities, Zod schemas, formatters
-│   │   └── nginx.conf        SPA + static assets config for Cloud Run
-│   └── backend/           Fastify 4 + TypeScript
-│       └── src/
-│           ├── modules/       auth, users, crypto, groq
-│           ├── shared/        errors, health, logger, audit
-│           └── config/        Zod-validated env
-├── packages/
-│   ├── db/                 Database seed scripts
-│   ├── shared-types/        Shared TypeScript interfaces
-│   └── shared-utils/        Shared utility functions
-├── supabase/
-│   ├── migrations/           SQL migrations (RLS policies, triggers)
-│   └── config.toml           Supabase project config
-├── infra/
-│   ├── cloudbuild/           Cloud Build configs
-│   └── docker/               Docker Compose for local dev
-├── scripts/
-│   └── deploy.sh             GCP deployment script
-└── .github/workflows/        CI/CD (lint, typecheck, test, security)
-```
-
-**Two Cloud Run services:**
-
-- **Frontend**: Nginx serving React SPA (port 8080)
-- **Backend**: Fastify API server (port 8080)
-
----
-
-## Crypto Data Provider
-
-**CoinGecko** (free tier) is the primary data source, supplemented by **Binance WebSocket** for real-time price updates.
-
-Why CoinGecko:
-
-- Free tier: 30 req/min, 10,000 calls/month
-- Comprehensive coin data (price, market cap, volume, 24h change, sparkline)
-- No API key required for basic tier
-- Built-in caching layer (node-cache with TTL per endpoint):
-  - Top 10: 60s TTL
-  - Market overview: 120s TTL
-  - Coin history: 300s TTL
-- Circuit breaker + 429 retry with stale-while-revalidate fallback
-- Optional CoinGecko Pro key for higher rate limits
-
-Binance WebSocket (`wss://stream.binance.com:9443/ws`) provides real-time price ticks for the top 10 pairs, displayed in the dashboard table.
-
----
-
-## Data Model
-
-### Supabase PostgreSQL Tables
-
-```
-auth.users (Supabase managed)
-  └── user_profiles (1:1)
-        id           UUID PK FK → auth.users.id
-        display_name TEXT
-        email        TEXT
-        avatar_url   TEXT
-        role          TEXT DEFAULT 'user'  -- 'admin' | 'user'
-        is_active     BOOLEAN DEFAULT true
-        created_at    TIMESTAMPTZ
-        updated_at    TIMESTAMPTZ
-
-  └── user_preferences (1:1)
-        id               UUID PK DEFAULT gen_random_uuid()
-        user_id          UUID FK → user_profiles.id UNIQUE
-        theme            TEXT DEFAULT 'dark'
-        currency         TEXT DEFAULT 'USD'
-        refresh_interval INTEGER DEFAULT 30
-        created_at       TIMESTAMPTZ
-        updated_at        TIMESTAMPTZ
-
-  └── user_favorites (1:N)
-        id          UUID PK DEFAULT gen_random_uuid()
-        user_id     UUID FK → user_profiles.id
-        coin_id     TEXT
-        coin_symbol TEXT
-        added_at    TIMESTAMPTZ
-
-  └── price_alerts (1:N)
-        id            UUID PK DEFAULT gen_random_uuid()
-        user_id       UUID FK → user_profiles.id
-        coin_id       TEXT
-        coin_symbol   TEXT
-        condition     TEXT  -- 'above' | 'below'
-        target_price  NUMERIC
-        is_active     BOOLEAN DEFAULT true
-        triggered_at  TIMESTAMPTZ
-        created_at    TIMESTAMPTZ
-
-audit_logs
-        id           UUID PK
-        user_id      UUID FK → auth.users.id (nullable)
-        action       TEXT
-        entity_type  TEXT
-        entity_id    UUID
-        metadata     JSONB
-        ip_address   INET
-        user_agent   TEXT
-        created_at   TIMESTAMPTZ
-```
-
-**RLS policies:** Users can read/update their own profiles and preferences; admins can read all profiles. Service role has full access for backend operations.
-
-**Triggers:** `handle_new_user()` auto-creates `user_profiles` and `user_preferences` rows when a new user signs up via Supabase Auth, including the email from auth metadata.
-
----
-
-## Authentication & Security
-
-### Authentication
-
-- **Supabase Auth** handles user registration, login, email verification, and session management
-- **Email/password** login with confirmation email
-- **Google OAuth** (Supabase `signInWithOAuth`) with redirect-based flow
-- **JWT tokens** validated on every backend request via `auth.middleware.ts`
-- **Role-based access**: `admin` and `user` roles, stored in `user_profiles.role`
-- **Inactive user blocking**: middleware returns 403 for deactivated users
-
-### Security Measures
-
-- **CORS**: Whitelisted origins via `ALLOWED_ORIGINS` env var
-- **Rate limiting**: Global 100 req/min, auth routes 10 req/min, AI route 10 req/min (per-route via `@fastify/rate-limit`)
-- **Helmet**: Security headers (CSP, HSTS, X-Frame-Options, etc.)
-- **Input validation**: Zod schemas on all backend endpoints
-- **RLS**: Row Level Security on all Supabase tables
-- **Secrets**: GCP Secret Manager for production; `.env` files gitignored
-- **No hardcoded secrets**: All keys passed via environment variables; `.env.example` documents required vars with placeholder values
-
----
-
-## API Endpoints
-
-### Auth
-
-| Method | Path           | Auth | Description                       |
-| ------ | -------------- | ---- | --------------------------------- |
-| `GET`  | `/auth/me`     | Yes  | Get current user + profile        |
-| `POST` | `/auth/logout` | Yes  | Invalidate session (rate-limited) |
-
-### Users
-
-| Method   | Path                                   | Auth  | Description        |
-| -------- | -------------------------------------- | ----- | ------------------ |
-| `GET`    | `/users`                               | Admin | List all users     |
-| `POST`   | `/users`                               | Admin | Create user        |
-| `GET`    | `/users/me`                            | Yes   | Get own profile    |
-| `PATCH`  | `/users/me`                            | Yes   | Update own profile |
-| `GET`    | `/users/me/preferences`                | Yes   | Get preferences    |
-| `PATCH`  | `/users/me/preferences`                | Yes   | Upsert preferences |
-| `GET`    | `/users/me/favorites`                  | Yes   | List favorites     |
-| `POST`   | `/users/me/favorites`                  | Yes   | Add favorite       |
-| `DELETE` | `/users/me/favorites/:coinId`          | Yes   | Remove favorite    |
-| `GET`    | `/users/me/alerts`                     | Yes   | List alerts        |
-| `POST`   | `/users/me/alerts`                     | Yes   | Create alert       |
-| `PATCH`  | `/users/me/alerts/:alertId/deactivate` | Yes   | Deactivate alert   |
-| `DELETE` | `/users/me/alerts/:alertId`            | Yes   | Delete alert       |
-| `GET`    | `/users/:id`                           | Admin | Get user by ID     |
-| `PATCH`  | `/users/:id`                           | Admin | Update user        |
-| `DELETE` | `/users/:id`                           | Admin | Deactivate user    |
-
-### Crypto
-
-| Method | Path                                       | Auth | Description                      |
-| ------ | ------------------------------------------ | ---- | -------------------------------- |
-| `GET`  | `/crypto/top10`                            | Yes  | Top 10 cryptocurrencies (cached) |
-| `GET`  | `/crypto/market-overview`                  | Yes  | Global market KPIs (cached)      |
-| `GET`  | `/crypto/history/:coinId?range=1D\|7D\|1M` | Yes  | Price history for a coin         |
-
-### AI
-
-| Method | Path      | Auth | Description                            |
-| ------ | --------- | ---- | -------------------------------------- |
-| `POST` | `/ai/ask` | Yes  | Ask AI about the market (rate-limited) |
-
-### WebSocket
-
-| Path                    | Auth | Description                  |
-| ----------------------- | ---- | ---------------------------- |
-| `GET /ws/prices?token=` | Yes  | Real-time Binance price feed |
-| `GET /ws/status`        | Yes  | WebSocket connection status  |
-
-### Health
-
-| Method | Path      | Auth | Description                                  |
-| ------ | --------- | ---- | -------------------------------------------- |
-| `GET`  | `/health` | No   | Service health (database + CoinGecko status) |
+See [`apps/backend/.env.example`](apps/backend/.env.example) and [`apps/frontend/.env.example`](apps/frontend/.env.example) for the full list of required variables.
 
 ---
 
@@ -289,8 +213,6 @@ Deployed via `scripts/deploy.sh` (in `.gitignore`):
 ./scripts/deploy.sh backend    # Backend only
 ./scripts/deploy.sh frontend  # Frontend only
 ./scripts/deploy.sh secrets   # Update ALLOWED_ORIGINS in Secret Manager
-./scripts/deploy.sh mock:on   # Enable mock crypto data
-./scripts/deploy.sh mock:off  # Enable real CoinGecko data
 ```
 
 ### Required GCP Secrets
@@ -308,90 +230,65 @@ Deployed via `scripts/deploy.sh` (in `.gitignore`):
 
 Set in Dashboard → Authentication → URL Configuration:
 
-- **Site URL**: `https://monabit-frontend-XXXXX.us-central1.run.app`
-- **Redirect URLs**: `https://monabit-frontend-XXXXX.us-central1.run.app/**`
+- **Site URL**: your frontend Cloud Run URL
+- **Redirect URLs**: your frontend Cloud Run URL + `/**`
 
 ---
 
-## AI Tools Usage
+## Infrastructure
 
-| Tool                   | Purpose                                                 | How Used                                                                                         |
-| ---------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| **Claude (Anthropic)** | Architecture, code generation, debugging, documentation | Planned architecture, generated boilerplate, debugged OAuth race conditions, wrote documentation |
-| **opencode (CLI)**     | Interactive development, file editing, shell commands   | Code iteration, lint fixes, deployment debugging, git operations                                 |
-| **GitHub Copilot**     | Inline code suggestions                                 | Auto-completion in editor during routine coding                                                  |
+```
+Google Cloud Platform (us-central1)
+├── Cloud Run: monabit-frontend (0–3 instances, 256Mi)
+├── Cloud Run: monabit-backend  (1–3 instances, 512Mi)
+├── Artifact Registry: monabit-registry
+├── Secret Manager: 6 secrets (Supabase, CoinGecko, Groq)
+└── GitHub Actions: CI + security scan
 
-### Decisions Made by Me
+Supabase (us-east-1)
+├── PostgreSQL 15 (5 tables + RLS)
+├── GoTrue (Auth: email/password + Google OAuth)
+└── Migrations (2 migrations: schema + triggers)
+```
 
-- Stack selection (React, Fastify, Supabase, Cloud Run)
-- Database schema design and RLS policies
-- API endpoint design
-- Deployment architecture (two Cloud Run services)
-- Security measures (rate limiting, Helmet, Zod validation)
-- CoinGecko as data provider with Binance WebSocket supplement
+### CI/CD Workflows
 
-### AI Limitations Encountered
-
-- OAuth hash race condition required manual debugging (AI suggested clearing hash immediately, which broke Supabase session processing)
-- Cloud Run-specific deployment issues required iterative trial and error
-- AI sometimes suggested outdated library APIs or non-existent methods
-
----
-
-## Features
-
-### Core (Required)
-
-- [x] User registration (email/password)
-- [x] User login
-- [x] Logout
-- [x] Google OAuth login
-- [x] Protected routes
-- [x] User management (list, create, deactivate)
-- [x] Dashboard with top 10 cryptocurrencies
-- [x] KPIs (market cap, 24h volume, BTC dominance)
-- [x] Price chart (coin detail view)
-- [x] External API data (CoinGecko + Binance WebSocket)
-- [x] Database persistence (Supabase PostgreSQL)
-- [x] Deployed on Cloud Run
-
-### Extras (Implemented)
-
-- [x] Admin/user roles
-- [x] Audit logging
-- [x] Backend tests (44 tests)
-- [x] Frontend tests (55 tests)
-- [x] CI/CD (GitHub Actions)
-- [x] Crypto data caching (node-cache with TTL)
-- [x] Rate limiting (per-route)
-- [x] Dark mode
-- [x] Search and filters
-- [x] Cryptocurrency favorites per user
-- [x] Price alerts
-- [x] Structured logging (Pino)
-- [x] Health endpoint
-- [x] AI market assistant (Groq API)
-- [x] Edit user profile (pending frontend UI)
-
-### Not Implemented
-
-- [ ] Edit user UI (backend `PATCH /users/:id` exists, frontend UI missing)
-- [ ] Hard delete user (only soft deactivate)
-- [ ] Email notifications for price alerts
-- [ ] E2E tests (Playwright)
-- [ ] Redis for multi-instance cache
-- [ ] Custom domain mapping
+| Workflow            | Trigger        | Steps                           |
+| ------------------- | -------------- | ------------------------------- |
+| `ci-frontend.yml`   | Push to master | Lint → Typecheck → Test → Build |
+| `ci-backend.yml`    | Push to master | Lint → Typecheck → Test → Build |
+| `security-scan.yml` | PR to master   | Gitleaks + CodeQL + pnpm audit  |
+| `pr-review.yml`     | PR to master   | Lint + Typecheck + Test         |
 
 ---
 
-## Known Limitations
+## AI-Assisted Development
 
-- **CoinGecko free tier**: 30 req/min, 10K calls/month. Cache layer mitigates this; may need Pro upgrade for production.
-- **Single Cloud Run instance**: WebSocket connection is stateful; `min:1, max:1` scaling prevents horizontal scaling. Migrate to Redis + dedicated WS process for scaling.
-- **Google OAuth spinner**: When a deactivated user signs in via Google, the "Signing in..." spinner may persist. Login via email/password redirects to `/login` correctly with a toast message.
-- **Build-time env vars**: `VITE_API_URL`, `VITE_WS_URL`, and `VITE_SUPABASE_ANON_KEY` are baked at Docker build time. Changing them requires a full rebuild.
-- **WebSocket 60-min limit**: Cloud Run terminates connections after 60 minutes. The backend auto-reconnects with exponential backoff.
-- **No admin seed in UI**: First admin must be created via `pnpm seed:admin` CLI command.
+During development, tools such as Lovable and Claude Code were used to accelerate:
+
+- Initial scaffolding and project setup
+- Component generation and boilerplate code
+- Documentation drafting
+- Test creation
+- Code refactoring
+
+All decisions related to:
+
+- Architecture and tech stack selection
+- Security model and authentication flow
+- Data model and RLS policy design
+- API integration strategy
+- Deployment and infrastructure
+- Quality validation and review
+
+were made and verified manually.
+
+Issues commonly found in AI-generated code were identified and corrected:
+
+- Duplicate and dead code
+- Inconsistent typing
+- Incomplete or missing input validation
+- Race conditions in async flows (e.g., OAuth hash handling)
 
 ---
 
@@ -400,11 +297,37 @@ Set in Dashboard → Authentication → URL Configuration:
 | Command             | Description                      |
 | ------------------- | -------------------------------- |
 | `pnpm dev`          | Start all workspaces in parallel |
-| `pnpm dev:frontend` | Start frontend only              |
-| `pnpm dev:backend`  | Start backend only               |
+| `pnpm dev:frontend` | Start frontend dev server        |
+| `pnpm dev:backend`  | Start backend dev server         |
 | `pnpm build`        | Build all workspaces             |
 | `pnpm lint`         | Lint all workspaces              |
 | `pnpm typecheck`    | TypeScript check all workspaces  |
 | `pnpm test`         | Run all tests                    |
-| `pnpm format`       | Auto-format code with Prettier   |
+| `pnpm format`       | Auto-format with Prettier        |
 | `pnpm format:check` | Check formatting without writing |
+
+---
+
+## Known Limitations
+
+- **CoinGecko free tier**: 30 req/min, 10K calls/month. Cache layer mitigates this; upgrade to Pro for production scale.
+- **Single Cloud Run instance**: Binance WebSocket is stateful per instance. `min:1, max:3` with requests routed to the same instance. For true horizontal scaling, migrate cache to Redis and extract the WebSocket relay into a dedicated service.
+- **Build-time env vars**: `VITE_*` environment variables are baked at Docker build time. Changing them requires a full rebuild and redeploy.
+- **WebSocket 60-min disconnect**: Cloud Run terminates connections after 60 minutes. Backend auto-reconnects with exponential backoff.
+- **No admin seed UI**: First admin must be seeded via CLI (`pnpm seed:admin`).
+
+### Future Improvements
+
+- Redis for multi-instance cache sharing
+- Dedicated WebSocket process separated from HTTP server
+- Supabase Realtime for cross-tab synchronization
+- Push notifications for price alerts
+- Portfolio tracking
+- E2E tests with Playwright
+- CoinGecko Pro upgrade for higher rate limits
+
+---
+
+## License
+
+Private repository. All rights reserved.
