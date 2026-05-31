@@ -6,6 +6,7 @@ import { formatCurrency } from '@/lib/format';
 import { useAppStore } from '@/stores/app-store';
 import { createAlert } from '@/services/users-api';
 import { cn } from '@/lib/utils';
+import { CryptoIcon } from '@/components/ui/crypto-icon';
 
 type Props = { asset: DisplayCryptoAsset | null; onClose: () => void };
 
@@ -60,9 +61,7 @@ export function AlertModal({ asset, onClose }: Props) {
           <X className="h-4 w-4" />
         </button>
         <div className="mb-5 flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-lg">
-            {asset.logo}
-          </div>
+          <CryptoIcon src={asset.logo} symbol={asset.symbol} />
           <div>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Create alert</p>
             <h3 className="text-base font-semibold">
