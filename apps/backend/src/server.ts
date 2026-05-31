@@ -102,6 +102,14 @@ async function main() {
 
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
+  process.on('unhandledRejection', (reason) => {
+    logger.fatal({ reason }, 'Unhandled rejection');
+    process.exit(1);
+  });
+  process.on('uncaughtException', (err) => {
+    logger.fatal({ err }, 'Uncaught exception');
+    process.exit(1);
+  });
 }
 
 main().catch((err) => {
