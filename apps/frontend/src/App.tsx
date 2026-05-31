@@ -1,10 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { ThemeManager } from '@/components/theme-manager';
 import { AppShellLayout } from '@/components/layout/app-shell';
 import { useAppStore } from '@/stores/app-store';
+import { supabase } from '@/services/supabase';
+import { api } from '@/services/api';
 
 const LoginPage = lazy(() => import('@/pages/auth/login').then((m) => ({ default: m.LoginPage })));
 const DashboardPage = lazy(() =>
@@ -24,8 +26,41 @@ const queryClient = new QueryClient({
   },
 });
 
+async function fetchProfile(token: string) {
+  try {
+    const { user, profile } = await api.get<{
+      user: { id: string; email: string; role: 'admin' | 'user' };
+      profile: { display_name: string | null } | null;
+    }>('/auth/me');
+    useAppStore.getState().setSession(
+      {
+        id: user.id,
+        name: profile?.display_name ?? user.email.split('@')[0] ?? 'User',
+        email: user.email,
+        role: user.role === 'admin' ? 'Admin' : 'User',
+      },
+      token,
+    );
+  } catch {
+    // token invalid — user will be redirected to login
+  }
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const user = useAppStore((s) => s.user);
+  const [waiting, setWaiting] = useState(() => window.location.hash.includes('access_token='));
+
+  useEffect(() => {
+    if (user) {
+      setWaiting(false);
+      return;
+    }
+    if (!waiting) return;
+    const timer = setTimeout(() => setWaiting(false), 5000);
+    return () => clearTimeout(timer);
+  }, [waiting, user]);
+
+  if (waiting) return <PageSpinner />;
   if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
@@ -59,6 +94,36 @@ function PageSpinner() {
 }
 
 export function App() {
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (
+        (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') &&
+        session &&
+        !useAppStore.getState().user
+      ) {
+        useAppStore.setState({ token: session.access_token });
+        fetchProfile(session.access_token);
+      }
+    });
+
+    const timer = setTimeout(async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session && !useAppStore.getState().user) {
+        useAppStore.setState({ token: session.access_token });
+        fetchProfile(session.access_token);
+      }
+    }, 100);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timer);
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>

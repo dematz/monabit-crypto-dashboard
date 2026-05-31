@@ -104,7 +104,10 @@ export const useAppStore = create<AppState>()(
         ]);
       },
 
-      logout: () => set({ user: null, token: null }),
+      logout: () => {
+        set({ user: null, token: null });
+        supabase.auth.signOut().catch(() => {});
+      },
     }),
     { name: 'monabit-app' },
   ),

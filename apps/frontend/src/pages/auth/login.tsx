@@ -21,15 +21,45 @@ export function LoginPage() {
     if (existingUser) navigate('/');
   }, [existingUser, navigate]);
 
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (
+        (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') &&
+        session &&
+        !useAppStore.getState().user
+      ) {
+        useAppStore.setState({ token: session.access_token });
+        fetchProfile(session.access_token);
+      }
+    });
+
+    const timer = setTimeout(async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session && !useAppStore.getState().user) {
+        useAppStore.setState({ token: session.access_token });
+        fetchProfile(session.access_token);
+      }
+    }, 100);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timer);
+    };
+  }, []);
+
   async function fetchProfile(token: string) {
     const { user, profile } = await api.get<{
       user: { id: string; email: string; role: 'admin' | 'user' };
-      profile: { display_name: string | null };
+      profile: { display_name: string | null } | null;
     }>('/auth/me');
     setSession(
       {
         id: user.id,
-        name: profile.display_name ?? user.email.split('@')[0] ?? 'User',
+        name: profile?.display_name ?? user.email.split('@')[0] ?? 'User',
         email: user.email,
         role: user.role === 'admin' ? 'Admin' : 'User',
       },
@@ -72,8 +102,12 @@ export function LoginPage() {
     }
   };
 
-  const handleGoogle = () => {
-    toast.message('Google Sign-In is not available in local environment');
+  const handleGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) toast.error(error.message);
   };
 
   return (

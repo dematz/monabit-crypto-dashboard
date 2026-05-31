@@ -23,8 +23,8 @@ export function AreaChartImpl({ data, stroke, symbol, currency }: AreaChartProps
       <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
         <defs>
           <linearGradient id="priceFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={stroke} stopOpacity={0.35} />
-            <stop offset="100%" stopColor={stroke} stopOpacity={0} />
+            <stop offset="0%" stopColor={stroke} stopOpacity={0.5} />
+            <stop offset="100%" stopColor={stroke} stopOpacity={0.08} />
           </linearGradient>
         </defs>
         <CartesianGrid stroke="var(--color-border)" strokeDasharray="4 4" vertical={false} />
