@@ -1,8 +1,13 @@
 #!/usr/bin/env node
 import { createClient } from '@supabase/supabase-js/dist/index.cjs';
 
-const url = 'https://xsnwzthikalbdkquidyi.supabase.co';
+const url = process.env.SUPABASE_URL;
 const serviceKey = process.env.SERVICE_KEY;
+
+if (!url || !serviceKey) {
+  console.error('Missing required env vars: SUPABASE_URL, SERVICE_KEY');
+  process.exit(1);
+}
 
 const serviceClient = createClient(url, serviceKey, {
   auth: { autoRefreshToken: false, persistSession: false },

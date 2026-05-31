@@ -22,6 +22,8 @@ const envSchema = z.object({
   CACHE_TTL_MARKET_OVERVIEW: z.coerce.number().default(120),
   CACHE_TTL_COIN_HISTORY: z.coerce.number().default(300),
   GROQ_API_KEY: z.string().default(''),
+  GROQ_MODEL: z.string().default('llama-3.3-70b-versatile'),
+  GROQ_TIMEOUT: z.coerce.number().default(30000),
   BINANCE_WS_URL: z.string().default('wss://stream.binance.com:9443'),
 });
 

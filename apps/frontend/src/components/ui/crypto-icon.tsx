@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 type CryptoIconProps = {
@@ -14,19 +15,22 @@ const sizeClasses = {
 };
 
 export function CryptoIcon({ src, symbol, size = 'md', className }: CryptoIconProps) {
+  const [imgError, setImgError] = useState(false);
   const isUrl = src.startsWith('http');
 
-  if (isUrl) {
+  if (isUrl && !imgError) {
     return (
       <img
         src={src}
         alt={symbol}
+        onError={() => setImgError(true)}
         className={cn('rounded-full object-cover', sizeClasses[size], className)}
         loading="lazy"
       />
     );
   }
 
+  const initials = symbol.slice(0, 2).toUpperCase();
   return (
     <div
       className={cn(
@@ -35,7 +39,7 @@ export function CryptoIcon({ src, symbol, size = 'md', className }: CryptoIconPr
         className,
       )}
     >
-      {src}
+      {initials}
     </div>
   );
 }

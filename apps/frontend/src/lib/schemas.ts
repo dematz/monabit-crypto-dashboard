@@ -65,5 +65,27 @@ export const priceAlertSchema = z.object({
 
 export const ollamaResponseSchema = z.object({
   question: z.string(),
-  answer: z.string(),
+  answer: z.string().max(5000),
+});
+
+export const wsPriceUpdateSchema = z.object({
+  symbol: z.string().min(1),
+  price: z.number(),
+  change24h: z.number(),
+  volume: z.number(),
+  high: z.number(),
+  low: z.number(),
+});
+
+export const authMeResponseSchema = z.object({
+  user: z.object({
+    id: z.string(),
+    email: z.string(),
+    role: z.union([z.literal('admin'), z.literal('user')]),
+  }),
+  profile: z
+    .object({
+      display_name: z.string().nullable(),
+    })
+    .nullable(),
 });

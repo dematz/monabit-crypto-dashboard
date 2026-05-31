@@ -1,3 +1,7 @@
+# Cloud Build config for MonaBit frontend.
+# VITE_ vars are public client-side keys (embedded in JS bundle at build time).
+# SUPABASE_ANON_KEY is safe to expose — it's designed for browser use.
+# Must provide all substitutions via --substitutions flag or deploy.sh script.
 steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
@@ -23,8 +27,8 @@ steps:
 
 substitutions:
   _VITE_API_URL: 'https://monabit-backend-290867308628.us-central1.run.app'
-  _VITE_SUPABASE_URL: 'https://xsnwzthikalbdkquidyi.supabase.co'
-  _VITE_SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY_HERE'
+  _VITE_SUPABASE_URL: 'REQUIRED — pass via --substitutions=_VITE_SUPABASE_URL=...'
+  _VITE_SUPABASE_ANON_KEY: 'REQUIRED — pass via --substitutions=_VITE_SUPABASE_ANON_KEY=...'
   _VITE_WS_URL: 'wss://monabit-backend-290867308628.us-central1.run.app/ws/prices'
 
 options:

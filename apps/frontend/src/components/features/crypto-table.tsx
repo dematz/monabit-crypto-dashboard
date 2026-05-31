@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, memo } from 'react';
 import { Bell, Star } from 'lucide-react';
 import { formatCompact, formatCurrency } from '@/lib/format';
 import { useAppStore } from '@/stores/app-store';
@@ -26,6 +26,78 @@ const SYMBOL_MAP: Record<string, string> = {
 };
 
 type Filter = 'all' | 'favorites' | 'gainers' | 'losers';
+
+const CryptoTableRow = memo(function CryptoTableRow({
+  a,
+  currency,
+  fav,
+  onToggleFavorite,
+  onSetAlert,
+}: {
+  a: DisplayCryptoAsset & { volume24h?: number };
+  currency: 'USD' | 'EUR';
+  fav: boolean;
+  onToggleFavorite: (id: string) => void;
+  onSetAlert: (asset: DisplayCryptoAsset) => void;
+}) {
+  const positive = a.change24h >= 0;
+  return (
+    <tr className="border-b border-border/60 transition-colors hover:bg-accent/40">
+      <td className="px-4 py-3">
+        <button
+          type="button"
+          onClick={() => onToggleFavorite(a.id)}
+          className={cn(
+            'rounded-md p-1.5 transition-colors',
+            fav
+              ? 'text-yellow-400 hover:bg-yellow-400/10'
+              : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+          )}
+          aria-label={fav ? 'Remove from favorites' : 'Add to favorites'}
+        >
+          <Star className={cn('h-4 w-4', fav && 'fill-current')} />
+        </button>
+      </td>
+      <td className="px-4 py-3 text-muted-foreground tabular-nums">{a.rank}</td>
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-3">
+          <CryptoIcon src={a.logo} symbol={a.symbol} />
+          <div>
+            <p className="font-medium">{a.name}</p>
+            <p className="text-xs text-muted-foreground">{a.symbol}</p>
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-3 text-right font-medium tabular-nums">
+        {formatCurrency(a.price, currency)}
+      </td>
+      <td className="px-4 py-3 text-right">
+        <ChangeIndicator value={a.change24h} />
+      </td>
+      <td className="hidden px-4 py-3 text-right tabular-nums md:table-cell">
+        {formatCompact(a.marketCap, currency)}
+      </td>
+      <td className="hidden px-4 py-3 text-right tabular-nums lg:table-cell">
+        {formatCompact(a.volume24h ?? 0, currency)}
+      </td>
+      <td className="hidden px-4 py-3 lg:table-cell">
+        <div className="h-10 w-28">
+          <Sparkline data={a.sparkline} positive={positive} />
+        </div>
+      </td>
+      <td className="px-4 py-3 text-right">
+        <button
+          type="button"
+          onClick={() => onSetAlert(a)}
+          className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+          aria-label="Create alert"
+        >
+          <Bell className="h-4 w-4" />
+        </button>
+      </td>
+    </tr>
+  );
+});
 
 export function CryptoTable() {
   const currency = useAppStore((s) => s.currency);
@@ -125,69 +197,16 @@ export function CryptoTable() {
                     </td>
                   </tr>
                 ))
-              : rows.map((a) => {
-                  const fav = favorites.includes(a.id);
-                  const positive = a.change24h >= 0;
-                  return (
-                    <tr
-                      key={a.id}
-                      className="border-b border-border/60 transition-colors hover:bg-accent/40"
-                    >
-                      <td className="px-4 py-3">
-                        <button
-                          type="button"
-                          onClick={() => toggleFavorite(a.id)}
-                          className={cn(
-                            'rounded-md p-1.5 transition-colors',
-                            fav
-                              ? 'text-yellow-400 hover:bg-yellow-400/10'
-                              : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-                          )}
-                          aria-label={fav ? 'Remove from favorites' : 'Add to favorites'}
-                        >
-                          <Star className={cn('h-4 w-4', fav && 'fill-current')} />
-                        </button>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground tabular-nums">{a.rank}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <CryptoIcon src={a.logo} symbol={a.symbol} />
-                          <div>
-                            <p className="font-medium">{a.name}</p>
-                            <p className="text-xs text-muted-foreground">{a.symbol}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right font-medium tabular-nums">
-                        {formatCurrency(a.price, currency)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <ChangeIndicator value={a.change24h} />
-                      </td>
-                      <td className="hidden px-4 py-3 text-right tabular-nums md:table-cell">
-                        {formatCompact(a.marketCap, currency)}
-                      </td>
-                      <td className="hidden px-4 py-3 text-right tabular-nums lg:table-cell">
-                        {formatCompact(a.volume24h, currency)}
-                      </td>
-                      <td className="hidden px-4 py-3 lg:table-cell">
-                        <div className="h-10 w-28">
-                          <Sparkline data={a.sparkline} positive={positive} />
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => setAlertAsset(a)}
-                          className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                          aria-label="Create alert"
-                        >
-                          <Bell className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+              : rows.map((a) => (
+                  <CryptoTableRow
+                    key={a.id}
+                    a={a}
+                    currency={currency}
+                    fav={favorites.includes(a.id)}
+                    onToggleFavorite={toggleFavorite}
+                    onSetAlert={setAlertAsset}
+                  />
+                ))}
             {!isLoading && rows.length === 0 && (
               <tr>
                 <td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">

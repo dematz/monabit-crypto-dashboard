@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
-import { lazy, Suspense, useState, startTransition, useEffect } from 'react';
+import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
+import { lazy, Suspense, useEffect } from 'react';
 import { ThemeManager } from '@/components/theme-manager';
 import { AppShellLayout } from '@/components/layout/app-shell';
 import { useAppStore } from '@/stores/app-store';
@@ -27,19 +28,7 @@ const queryClient = new QueryClient({
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const user = useAppStore((s) => s.user);
-  const [waiting, setWaiting] = useState(() => window.location.hash.includes('access_token='));
 
-  useEffect(() => {
-    if (user) {
-      startTransition(() => setWaiting(false));
-      return;
-    }
-    if (!waiting) return;
-    const timer = setTimeout(() => setWaiting(false), 5000);
-    return () => clearTimeout(timer);
-  }, [waiting, user]);
-
-  if (waiting) return <PageSpinner />;
   if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
@@ -64,6 +53,25 @@ function NotFoundPage() {
   );
 }
 
+function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
+  const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="max-w-md text-center">
+        <h1 className="text-4xl font-bold text-destructive">Something went wrong</h1>
+        <p className="mt-3 text-sm text-muted-foreground">{message}</p>
+        <button
+          type="button"
+          onClick={resetErrorBoundary}
+          className="mt-6 inline-flex items-center justify-center rounded-md bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground hover:opacity-90"
+        >
+          Reload
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function PageSpinner() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
@@ -75,27 +83,33 @@ function PageSpinner() {
 export function App() {
   useAuthListener();
 
+  useEffect(() => {
+    useAppStore.setState({ onLogout: () => queryClient.clear() });
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <ThemeManager />
-        <Suspense fallback={<PageSpinner />}>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route
-              element={
-                <ProtectedRoute>
-                  <AppShellLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<DashboardPage />} />
-              <Route path="users" element={<UsersPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-            </Route>
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </Suspense>
+        <ErrorBoundary FallbackComponent={ErrorFallback} onReset={() => window.location.reload()}>
+          <Suspense fallback={<PageSpinner />}>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route
+                element={
+                  <ProtectedRoute>
+                    <AppShellLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<DashboardPage />} />
+                <Route path="users" element={<UsersPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+              </Route>
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
         <Toaster richColors position="top-right" />
       </BrowserRouter>
     </QueryClientProvider>

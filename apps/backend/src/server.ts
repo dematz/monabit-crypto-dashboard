@@ -38,7 +38,30 @@ async function main() {
   app.setErrorHandler(errorHandler);
 
   await app.register(helmet, {
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: [
+          "'self'",
+          'data:',
+          'https://assets.coingecko.com',
+          'https://coin-images.coingecko.com',
+        ],
+        connectSrc: [
+          "'self'",
+          'wss://stream.binance.com:9443',
+          config.SUPABASE_URL,
+          'https://api.coingecko.com',
+        ],
+        fontSrc: ["'self'"],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
   });
 
   await app.register(cors, {
@@ -48,6 +71,10 @@ async function main() {
   await app.register(rateLimit, {
     max: 100,
     timeWindow: '1 minute',
+  });
+
+  app.setNotFoundHandler((_, reply) => {
+    reply.status(404).send({ error: 'Not found' });
   });
 
   await app.register(websocket);

@@ -24,7 +24,11 @@ async function fetchMarketOverview(): Promise<MarketOverview> {
   return response.data;
 }
 
-export async function getTop10(): Promise<{ data: CryptoAsset[]; cached: boolean }> {
+export async function getTop10(): Promise<{
+  data: CryptoAsset[];
+  cached: boolean;
+  stale?: boolean;
+}> {
   const cached = getCached<CryptoAsset[]>('top10');
   if (cached) return { data: cached, cached: true };
 
@@ -38,12 +42,16 @@ export async function getTop10(): Promise<{ data: CryptoAsset[]; cached: boolean
   } catch (error) {
     logger.warn({ err: error }, 'CoinGecko top10 failed, trying stale cache');
     const stale = getStaleCache<CryptoAsset[]>('top10');
-    if (stale) return { data: stale, cached: true };
+    if (stale) return { data: stale, cached: true, stale: true };
     throw error;
   }
 }
 
-export async function getMarketOverview(): Promise<{ data: MarketOverview; cached: boolean }> {
+export async function getMarketOverview(): Promise<{
+  data: MarketOverview;
+  cached: boolean;
+  stale?: boolean;
+}> {
   const cached = getCached<MarketOverview>('market_overview');
   if (cached) return { data: cached, cached: true };
 
@@ -57,7 +65,7 @@ export async function getMarketOverview(): Promise<{ data: MarketOverview; cache
   } catch (error) {
     logger.warn({ err: error }, 'CoinGecko market-overview failed, trying stale cache');
     const stale = getStaleCache<MarketOverview>('market_overview');
-    if (stale) return { data: stale, cached: true };
+    if (stale) return { data: stale, cached: true, stale: true };
     throw error;
   }
 }
@@ -65,7 +73,7 @@ export async function getMarketOverview(): Promise<{ data: MarketOverview; cache
 export async function getCoinHistory(
   coinId: string,
   range: '1D' | '7D' | '1M' = '7D',
-): Promise<{ data: PricePoint[]; cached: boolean }> {
+): Promise<{ data: PricePoint[]; cached: boolean; stale?: boolean }> {
   if (config.MOCK_CRYPTO) {
     return { data: mockCoinHistory(coinId, range), cached: true };
   }
@@ -108,7 +116,7 @@ export async function getCoinHistory(
   } catch (error) {
     logger.warn({ err: error, coinId, range }, 'CoinGecko coin-history failed, trying stale cache');
     const stale = getStaleCache<PricePoint[]>(cacheKey);
-    if (stale) return { data: stale, cached: true };
+    if (stale) return { data: stale, cached: true, stale: true };
     throw error;
   }
 }

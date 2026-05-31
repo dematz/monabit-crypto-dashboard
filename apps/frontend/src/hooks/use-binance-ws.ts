@@ -1,17 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import type { z } from 'zod';
+import { useAppStore } from '@/stores/app-store';
+import { wsPriceUpdateSchema } from '@/lib/schemas';
 
 const WS_URL = import.meta.env.VITE_WS_URL as string;
 
-type WsPriceUpdate = {
-  symbol: string;
-  price: number;
-  change24h: number;
-  volume: number;
-  high: number;
-  low: number;
-};
-
-export type LivePrice = WsPriceUpdate;
+export type LivePrice = z.infer<typeof wsPriceUpdateSchema>;
 
 export function useBinanceWs() {
   const [livePrices, setLivePrices] = useState<Record<string, LivePrice>>({});
@@ -23,16 +17,22 @@ export function useBinanceWs() {
     if (!WS_URL) return;
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
-    const ws = new WebSocket(WS_URL);
+    const token = useAppStore.getState().token;
+    if (!token) return;
+
+    const url = WS_URL + (WS_URL.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token);
+    const ws = new WebSocket(url);
     wsRef.current = ws;
 
     ws.onmessage = (event: MessageEvent) => {
       try {
-        const data: WsPriceUpdate = JSON.parse(event.data);
-        if (data.symbol) {
+        const raw = JSON.parse(event.data);
+        if (raw.error) return;
+        const parsed = wsPriceUpdateSchema.safeParse(raw);
+        if (parsed.success) {
           setLivePrices((prev) => ({
             ...prev,
-            [data.symbol.toUpperCase()]: data,
+            [parsed.data.symbol.toUpperCase()]: parsed.data,
           }));
         }
       } catch {

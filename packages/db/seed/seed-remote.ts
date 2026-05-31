@@ -1,10 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
-const url = 'https://xsnwzthikalbdkquidyi.supabase.co';
-const serviceKey = process.env.SERVICE_KEY;
+const url = process.env.SUPABASE_URL!;
+const serviceKey = process.env.SERVICE_KEY!;
 
-if (!serviceKey) {
-  console.error('Missing SERVICE_KEY env var');
+if (!url || !serviceKey) {
+  console.error('Missing required env vars: SUPABASE_URL, SERVICE_KEY');
   process.exit(1);
 }
 

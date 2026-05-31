@@ -1,13 +1,17 @@
 import { api } from './api';
 import { useAppStore } from '@/stores/app-store';
 import { toast } from 'sonner';
+import { authMeResponseSchema } from '@/lib/schemas';
 
 export async function fetchAndSetProfile(token: string) {
   try {
-    const { user, profile } = await api.get<{
-      user: { id: string; email: string; role: 'admin' | 'user' };
-      profile: { display_name: string | null } | null;
-    }>('/auth/me');
+    const raw = await api.get<unknown>('/auth/me');
+    const parsed = authMeResponseSchema.safeParse(raw);
+    if (!parsed.success) {
+      toast.error('Invalid server response');
+      return;
+    }
+    const { user, profile } = parsed.data;
     useAppStore.getState().setSession(
       {
         id: user.id,

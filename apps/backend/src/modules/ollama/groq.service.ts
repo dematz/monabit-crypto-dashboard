@@ -60,7 +60,7 @@ export async function askGroq(question: string): Promise<string> {
     const { data } = await axios.post<GroqResponse>(
       GROQ_API_URL,
       {
-        model: 'llama-3.3-70b-versatile',
+        model: config.GROQ_MODEL,
         messages: [
           { role: 'system', content: systemContent },
           { role: 'user', content: question },
@@ -73,7 +73,7 @@ export async function askGroq(question: string): Promise<string> {
           Authorization: `Bearer ${config.GROQ_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        timeout: 30000,
+        timeout: config.GROQ_TIMEOUT,
       },
     );
 

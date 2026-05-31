@@ -38,8 +38,51 @@ const STREAM_SYMBOLS = [
 
 let ws: WebSocket | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 10;
 const subscribers = new Set<PriceCallback>();
 let isShuttingDown = false;
+
+const THROTTLE_MS = 250;
+const pendingUpdates = new Map<
+  string,
+  {
+    symbol: string;
+    price: number;
+    change24h: number;
+    volume: number;
+    high: number;
+    low: number;
+  }
+>();
+let throttleTimer: ReturnType<typeof setInterval> | null = null;
+
+function flushPendingUpdates() {
+  if (pendingUpdates.size === 0) return;
+  for (const [, data] of pendingUpdates) {
+    for (const cb of subscribers) {
+      try {
+        cb(data);
+      } catch (err) {
+        logger.warn({ err }, 'Subscriber callback error');
+      }
+    }
+  }
+  pendingUpdates.clear();
+}
+
+function startThrottle() {
+  if (throttleTimer) return;
+  throttleTimer = setInterval(flushPendingUpdates, THROTTLE_MS);
+}
+
+function stopThrottle() {
+  if (throttleTimer) {
+    clearInterval(throttleTimer);
+    throttleTimer = null;
+  }
+  flushPendingUpdates();
+}
 
 export function getSubscribersCount(): number {
   return subscribers.size;
@@ -54,9 +97,11 @@ export function subscribeBinance(cb: PriceCallback): () => void {
   if (subscribers.size === 1 && !ws) {
     connect();
   }
+  startThrottle();
   return () => {
     subscribers.delete(cb);
     if (subscribers.size === 0) {
+      stopThrottle();
       disconnect();
     }
   };
@@ -73,14 +118,7 @@ function parseTicker(msg: z.infer<typeof binanceTickerSchema>) {
   };
 
   setCache(`ws_price:${msg.s}`, data);
-
-  for (const cb of subscribers) {
-    try {
-      cb(data);
-    } catch (err) {
-      logger.warn({ err }, 'Subscriber callback error in Binance ticker');
-    }
-  }
+  pendingUpdates.set(msg.s, data);
 }
 
 function connect() {
@@ -100,6 +138,7 @@ function connect() {
   }
 
   ws.on('open', () => {
+    reconnectAttempts = 0;
     logger.info('Binance WebSocket connected');
   });
 
@@ -139,8 +178,21 @@ function connect() {
 
 function scheduleReconnect() {
   if (reconnectTimer || isShuttingDown) return;
-  const delay = 5000 + Math.random() * 5000;
-  logger.info({ delay: Math.round(delay) }, 'Reconnecting Binance WebSocket in');
+
+  reconnectAttempts++;
+  if (reconnectAttempts > MAX_RECONNECT_ATTEMPTS) {
+    logger.error({ attempts: reconnectAttempts }, 'Binance max reconnect attempts reached');
+    return;
+  }
+
+  const baseDelay = Math.min(reconnectAttempts * 2000, 30000);
+  const jitter = Math.random() * 3000;
+  const delay = baseDelay + jitter;
+
+  logger.info(
+    { delay: Math.round(delay), attempt: reconnectAttempts },
+    'Reconnecting Binance WebSocket in',
+  );
   reconnectTimer = setTimeout(() => {
     reconnectTimer = null;
     connect();
@@ -148,6 +200,7 @@ function scheduleReconnect() {
 }
 
 function disconnect() {
+  reconnectAttempts = 0;
   if (ws) {
     ws.removeAllListeners();
     ws.close();

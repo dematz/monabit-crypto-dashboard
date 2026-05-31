@@ -6,7 +6,7 @@ import { formatCompact, formatCurrency, formatPercent } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { askOllama } from '@/services/ollama-api';
 
-type Msg = { role: 'user' | 'assistant'; content: string };
+type Msg = { id: string; role: 'user' | 'assistant'; content: string };
 
 const SUGGESTIONS = [
   "Today's market summary",
@@ -63,6 +63,7 @@ export function AiAssistant() {
   const user = useAppStore((s) => s.user);
   const [messages, setMessages] = useState<Msg[]>([
     {
+      id: crypto.randomUUID(),
       role: 'assistant',
       content:
         "Hello! I'm **MonaBit AI** 🤖 — ask me about the market summary, a specific asset, or the biggest movers of the day.",
@@ -79,19 +80,26 @@ export function AiAssistant() {
   const send = async (text: string) => {
     const value = text.trim();
     if (!value) return;
-    setMessages((m) => [...m, { role: 'user', content: value }]);
+    setMessages((m) => [...m, { id: crypto.randomUUID(), role: 'user', content: value }]);
     setInput('');
     setTyping(true);
 
     try {
       if (user) {
         const res = await askOllama(value);
-        setMessages((m) => [...m, { role: 'assistant', content: res.answer }]);
+        setMessages((m) => [
+          ...m,
+          { id: crypto.randomUUID(), role: 'assistant', content: res.answer },
+        ]);
       } else {
         setTimeout(() => {
           setMessages((m) => [
             ...m,
-            { role: 'assistant', content: generateFallback(value, currency) },
+            {
+              id: crypto.randomUUID(),
+              role: 'assistant',
+              content: generateFallback(value, currency),
+            },
           ]);
           setTyping(false);
         }, 600);
@@ -101,6 +109,7 @@ export function AiAssistant() {
       setMessages((m) => [
         ...m,
         {
+          id: crypto.randomUUID(),
           role: 'assistant',
           content:
             generateFallback(value, currency) + '\n\n_(Offline — showing simulated response)_',
@@ -142,8 +151,11 @@ export function AiAssistant() {
       </div>
 
       <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-5">
-        {messages.map((m, i) => (
-          <div key={i} className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
+        {messages.map((m) => (
+          <div
+            key={m.id}
+            className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}
+          >
             <div
               className={cn(
                 'max-w-[85%] whitespace-pre-line rounded-2xl px-4 py-2.5 text-sm leading-relaxed',

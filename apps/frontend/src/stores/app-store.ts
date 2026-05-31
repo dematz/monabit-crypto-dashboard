@@ -19,6 +19,7 @@ type AppState = {
   aiOpen: boolean;
   user: SessionUser;
   token: string | null;
+  onLogout: (() => void) | null;
   setTheme: (t: Theme) => void;
   setCurrency: (c: Currency) => void;
   setRefreshInterval: (n: number) => void;
@@ -49,6 +50,7 @@ export const useAppStore = create<AppState>()(
       aiOpen: false,
       user: null,
       token: null,
+      onLogout: null,
 
       setTheme: async (theme) => {
         set({ theme });
@@ -105,8 +107,10 @@ export const useAppStore = create<AppState>()(
       },
 
       logout: () => {
+        const cleanup = get().onLogout;
         set({ user: null, token: null });
         supabase.auth.signOut().catch(() => {});
+        cleanup?.();
       },
     }),
     { name: 'monabit-app' },

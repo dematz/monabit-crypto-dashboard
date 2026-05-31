@@ -19,7 +19,10 @@ export async function auditLog(request: FastifyRequest, _reply: FastifyReply): P
       user_id: userId,
       action,
       entity_type: request.url.split('/')[1] || 'unknown',
-      entity_id: (request.params as Record<string, string>).id ?? null,
+      entity_id:
+        typeof request.params === 'object' && request.params !== null && 'id' in request.params
+          ? (request.params as { id: string }).id
+          : null,
       ip_address: request.ip,
       user_agent: request.headers['user-agent'] ?? null,
     });

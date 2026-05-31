@@ -8,9 +8,16 @@ const askSchema = z.object({
 });
 
 export async function ollamaModule(app: FastifyInstance) {
-  app.post('/ollama/ask', { preHandler: [authenticate] }, async (request) => {
-    const { question } = askSchema.parse(request.body);
-    const answer = await askGroq(question);
-    return { question, answer };
-  });
+  app.post(
+    '/ollama/ask',
+    {
+      preHandler: [authenticate],
+      config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
+    },
+    async (request) => {
+      const { question } = askSchema.parse(request.body);
+      const answer = await askGroq(question);
+      return { question, answer };
+    },
+  );
 }

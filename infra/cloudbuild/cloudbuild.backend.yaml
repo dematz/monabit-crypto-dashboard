@@ -1,3 +1,7 @@
+# Cloud Build config for MonaBit backend.
+# Secrets are injected at Cloud Run deploy time via --set-secrets (see scripts/deploy.sh).
+# Required GCP secrets: supabase-anon-key, supabase-service-role-key,
+#   allowed-origins, coingecko-api-key, groq-api-key
 steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
