@@ -18,8 +18,7 @@ supabase/volumes
 infra/docker/.env
 infra/docker/.env.docker
 
-# Deployment scripts (contains GCP project-specific configuration)
-scripts/deploy.sh
+
 
 # Dev-team-only documentation (contains real keys and secrets)
 docs/local/
