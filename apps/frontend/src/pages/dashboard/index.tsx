@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { KpiCard } from '@/components/features/kpi-card';
 import { PriceChart } from '@/components/features/price-chart';
@@ -10,6 +9,16 @@ import { useRefreshMs } from '@/hooks/use-refresh-ms';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageHeader } from '@/components/ui/page-header';
 
+function formatTimeAgo(fetchedAt: string | undefined): string | null {
+  if (!fetchedAt) return null;
+  const d = new Date(fetchedAt);
+  const diff = Date.now() - d.getTime();
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}m ago`;
+}
+
 export function DashboardPage() {
   const currency = useAppStore((s) => s.currency);
   const refreshMs = useRefreshMs();
@@ -20,15 +29,7 @@ export function DashboardPage() {
     refetchInterval: refreshMs,
   });
 
-  const lastUpdated = useMemo(() => {
-    if (!market?.fetched_at) return null;
-    const d = new Date(market.fetched_at);
-    const diff = Date.now() - d.getTime();
-    const seconds = Math.floor(diff / 1000);
-    if (seconds < 60) return `${seconds}s ago`;
-    const minutes = Math.floor(seconds / 60);
-    return `${minutes}m ago`;
-  }, [market?.fetched_at]);
+  const lastUpdated = formatTimeAgo(market?.fetched_at);
 
   return (
     <div className="space-y-6">

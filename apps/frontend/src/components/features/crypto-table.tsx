@@ -34,7 +34,7 @@ const CryptoTableRow = memo(function CryptoTableRow({
   onToggleFavorite,
   onSetAlert,
 }: {
-  a: DisplayCryptoAsset & { volume24h?: number };
+  a: DisplayCryptoAsset & { volume24h: number };
   currency: 'USD' | 'EUR';
   fav: boolean;
   onToggleFavorite: (id: string) => void;
@@ -78,7 +78,7 @@ const CryptoTableRow = memo(function CryptoTableRow({
         {formatCompact(a.marketCap, currency)}
       </td>
       <td className="hidden px-4 py-3 text-right tabular-nums lg:table-cell">
-        {formatCompact(a.volume24h ?? 0, currency)}
+        {formatCompact(a.volume24h, currency)}
       </td>
       <td className="hidden px-4 py-3 lg:table-cell">
         <div className="h-10 w-28">
