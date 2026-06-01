@@ -37,6 +37,11 @@ export async function createUser(input: CreateUserInput) {
     },
   });
   if (error) throw error;
+
+  await getSupabaseAdmin().auth.admin.updateUserById(authUser.user.id, {
+    email_confirm: false,
+  });
+
   const { data: profile } = await getSupabaseAdmin()
     .from('user_profiles')
     .update({

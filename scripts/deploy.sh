@@ -158,6 +158,9 @@ deploy_backend() {
     --member="allUsers" \
     --role="roles/run.invoker"
 
+  gcloud run services update-traffic "$GCP_BACKEND_SERVICE" \
+    --to-latest --region="$GCP_REGION" --platform=managed
+
   echo "✅ Backend deployed + IAM invoker binding applied"
 }
 
@@ -182,6 +185,9 @@ deploy_frontend() {
     --region="$GCP_REGION" --platform=managed \
     --allow-unauthenticated \
     --min-instances=0 --max-instances=3 --memory=256Mi
+
+  gcloud run services update-traffic "$GCP_FRONTEND_SERVICE" \
+    --to-latest --region="$GCP_REGION" --platform=managed
 
   echo "✅ Frontend deployed"
 }
