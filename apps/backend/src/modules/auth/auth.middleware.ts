@@ -28,7 +28,7 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
 
   const { data: profile } = await getSupabaseAdmin()
     .from('user_profiles')
-    .select('is_active')
+    .select('is_active, role')
     .eq('id', user.id)
     .single();
 
@@ -36,7 +36,8 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
     return reply.status(403).send({ error: 'Account is deactivated. Contact an administrator.' });
   }
 
-  const roleParse = roleSchema.safeParse(user.user_metadata.role);
+  const roleFromProfile = profile?.role;
+  const roleParse = roleSchema.safeParse(roleFromProfile ?? user.user_metadata.role);
 
   request.user = {
     id: user.id,

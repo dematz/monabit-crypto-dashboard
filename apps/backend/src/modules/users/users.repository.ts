@@ -60,6 +60,12 @@ export async function getUserById(id: string) {
 }
 
 export async function updateUser(id: string, input: UpdateUserInput) {
+  if (input.role) {
+    await getSupabaseAdmin().auth.admin.updateUserById(id, {
+      user_metadata: { role: input.role },
+    });
+  }
+
   const { data } = await getSupabaseAdmin()
     .from('user_profiles')
     .update({ ...input, updated_at: new Date().toISOString() })
