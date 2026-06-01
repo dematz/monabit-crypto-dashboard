@@ -86,6 +86,7 @@ export const authMeResponseSchema = z.object({
   profile: z
     .object({
       display_name: z.string().nullable(),
+      role: z.union([z.literal('admin'), z.literal('user')]),
     })
     .nullable(),
 });

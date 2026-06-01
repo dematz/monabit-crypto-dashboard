@@ -8,11 +8,7 @@ export function useAuthListener() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (
-        (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') &&
-        session &&
-        !useAppStore.getState().user
-      ) {
+      if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session) {
         useAppStore.setState({ token: session.access_token });
         fetchAndSetProfile(session.access_token);
       }
@@ -22,7 +18,7 @@ export function useAuthListener() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      if (session && !useAppStore.getState().user) {
+      if (session) {
         useAppStore.setState({ token: session.access_token });
         fetchAndSetProfile(session.access_token);
       }

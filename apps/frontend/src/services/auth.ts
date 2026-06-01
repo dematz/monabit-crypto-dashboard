@@ -12,12 +12,13 @@ export async function fetchAndSetProfile(token: string) {
       return;
     }
     const { user, profile } = parsed.data;
+    const role = profile?.role ?? user.role;
     useAppStore.getState().setSession(
       {
         id: user.id,
         name: profile?.display_name ?? user.email.split('@')[0] ?? 'User',
         email: user.email,
-        role: user.role === 'admin' ? 'Admin' : 'User',
+        role: role === 'admin' ? 'Admin' : 'User',
       },
       token,
     );
@@ -28,4 +29,10 @@ export async function fetchAndSetProfile(token: string) {
       useAppStore.getState().logout();
     }
   }
+}
+
+export function refreshCurrentSession() {
+  const state = useAppStore.getState();
+  if (!state.token) return;
+  return fetchAndSetProfile(state.token);
 }

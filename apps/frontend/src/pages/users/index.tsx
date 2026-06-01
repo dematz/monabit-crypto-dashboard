@@ -5,6 +5,7 @@ import { MoreHorizontal, Power, UserCheck, ShieldCheck, Plus } from 'lucide-reac
 import { toast } from 'sonner';
 import { fetchUsers, toggleUserStatus, createUser, updateUser } from '@/services/users-api';
 import { useAppStore } from '@/stores/app-store';
+import { refreshCurrentSession } from '@/services/auth';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SearchInput } from '@/components/ui/search-input';
@@ -63,6 +64,7 @@ export function UsersPage() {
       toggleUserStatus(id, isActive),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      if (variables.id === user?.id) refreshCurrentSession();
       toast.success(variables.isActive ? 'User activated' : 'User deactivated');
     },
     onError: (_err, variables) =>
@@ -73,6 +75,7 @@ export function UsersPage() {
     mutationFn: () => updateUser(editingUser!.id, editForm),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      if (editingUser!.id === user?.id) refreshCurrentSession();
       toast.success('User updated');
       setEditingUser(null);
     },

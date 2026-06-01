@@ -28,9 +28,9 @@ const queryClient = new QueryClient({
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const user = useAppStore((s) => s.user);
+  const token = useAppStore((s) => s.token);
   const isOauthCallback =
     typeof window !== 'undefined' && window.location.hash.includes('access_token=');
-  const showSpinner = isOauthCallback && !user;
 
   useEffect(() => {
     if (!isOauthCallback) return;
@@ -40,13 +40,21 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timer);
   }, [isOauthCallback]);
 
-  if (showSpinner) {
+  if (isOauthCallback && !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-brand border-t-transparent" />
           <p className="mt-3 text-sm text-muted-foreground">Signing in...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (token && !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand border-t-transparent" />
       </div>
     );
   }

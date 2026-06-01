@@ -113,7 +113,22 @@ export const useAppStore = create<AppState>()(
         cleanup?.();
       },
     }),
-    { name: 'monabit-app' },
+    {
+      name: 'monabit-app',
+      version: 1,
+      partialize: (state) => ({
+        theme: state.theme,
+        currency: state.currency,
+        refreshInterval: state.refreshInterval,
+        favorites: state.favorites,
+        token: state.token,
+      }),
+      merge: (persisted, current) => ({
+        ...current,
+        ...(typeof persisted === 'object' && persisted !== null ? persisted : {}),
+        user: null,
+      }),
+    },
   ),
 );
 
