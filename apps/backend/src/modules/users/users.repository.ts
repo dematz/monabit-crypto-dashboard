@@ -30,7 +30,7 @@ export async function createUser(input: CreateUserInput) {
   const { data: authUser, error } = await getSupabaseAdmin().auth.admin.createUser({
     email: input.email,
     password: input.password,
-    email_confirm: true,
+    email_confirm: false,
     user_metadata: {
       role: input.role,
       display_name: input.display_name ?? null,
