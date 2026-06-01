@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+export const updateMeSchema = z.object({
+  display_name: z.string().optional(),
+  avatar_url: z.string().url().optional(),
+});
+
+export type UpdateMeInput = z.infer<typeof updateMeSchema>;
+
 export const updateUserSchema = z.object({
   display_name: z.string().optional(),
   avatar_url: z.string().url().optional(),

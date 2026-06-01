@@ -46,6 +46,7 @@ export async function createUser(input: CreateUserInput) {
     .from('user_profiles')
     .update({
       display_name: input.display_name ?? null,
+      role: input.role,
     })
     .eq('id', authUser.user.id)
     .select()

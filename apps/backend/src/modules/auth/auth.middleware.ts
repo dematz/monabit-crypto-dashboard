@@ -37,7 +37,7 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
   }
 
   const roleFromProfile = profile?.role;
-  const roleParse = roleSchema.safeParse(roleFromProfile ?? user.user_metadata.role);
+  const roleParse = roleSchema.safeParse(roleFromProfile ?? 'user');
 
   request.user = {
     id: user.id,

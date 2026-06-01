@@ -1,4 +1,5 @@
 import type { CryptoAsset, MarketOverview, PricePoint } from '@monabit/shared-types';
+import { formatTimeLabel } from './date-labels.js';
 
 function sparklineSeed(base: number, vol: number, points: number, n: number): number[] {
   const out: number[] = [];
@@ -26,15 +27,7 @@ function seed(
     const r = Math.sin(i * 0.6 + n) + Math.cos(i * 0.27 + n * 1.7);
     v = Math.max(base * 0.6, v + r * vol);
     const d = new Date(now - (points - 1 - i) * msPerPoint);
-    let label: string;
-    if (range === '1D') {
-      label = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-    } else if (range === '7D') {
-      label = d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
-    } else {
-      label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
-    out.push({ t: label, price: Number(v.toFixed(2)) });
+    out.push({ t: formatTimeLabel(d, range), price: Number(v.toFixed(2)) });
   }
   return out;
 }

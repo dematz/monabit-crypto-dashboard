@@ -33,6 +33,7 @@ async function warmupCache() {
 async function main() {
   const app = Fastify({
     logger: false,
+    trustProxy: true,
   });
 
   app.setErrorHandler(errorHandler);

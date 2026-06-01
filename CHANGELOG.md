@@ -114,3 +114,18 @@ CoinGecko resilience, circuit breaker, and final deployment.
 - Frontend: 55 unit tests (format, utils, schemas, components)
 - Backend: 44 unit tests (schemas, mock data, auth, crypto)
 - CI runs lint → typecheck → test → build on every push
+
+## Phase 5 — Security Audit & Hardening
+
+Vulnerability fixes following Monabit Security Team's penetration testing and audit scripting.
+
+- **Auth middleware**: `user_metadata.role` fallback removed — `profile.role` is now the single source of truth; middleware hardcodes `'user'` as default
+- **DB trigger `handle_new_user()`**: now hardcodes `role := 'user'` instead of reading from `raw_user_meta_data`; adds `full_name` fallback for Google OAuth
+- **PATCH /users/me**: schema split into `updateMeSchema` (safe fields only) vs `updateUserSchema` (admin-only `role`/`is_active`)
+- **`createUser` repository**: now passes `role: input.role` to profile UPDATE after trigger runs
+- **Audit middleware**: `X-Forwarded-For` IP parsing, `entity_id` from `request.params` or `createdEntityId`, metadata extracted from body (password excluded); `trustProxy: true` in server
+- **Chart date labels**: replaced `toLocaleDateString` with `formatTimeLabel()` utility (explicit month/day/hour arrays) to eliminate Node.js locale dependency
+- **Migration 004 RLS fix**: replaced `OLD.role`/`OLD.is_active` (inaccessible in `WITH CHECK`) with subqueries
+- **Migration 005**: new migration to apply trigger fix and display name fallback
+- **44 backend tests pass** (7 new security tests covering trigger hardcoding, PATCH /me escalation, PATCH /:id 403, POST /users 403 for non-admin, admin creates admin, audit fields populated, auth middleware profile.role)
+- **Penetration testing**: Monabit Security Team executed automated escalation, injection, and audit-integrity scripts against the live deployment. Their findings directly informed the fixes above. All identified vectors were closed.

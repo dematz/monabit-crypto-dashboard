@@ -4,6 +4,7 @@ import { getCached, setCache } from './crypto.cache.js';
 import { fetchCoinGecko, setStaleCache, getStaleCache } from './coingecko-client.js';
 import { mockTop10, mockMarketOverview, mockCoinHistory } from './coingecko.mock.js';
 import { logger } from '../../shared/logger/index.js';
+import { formatTimeLabel } from './date-labels.js';
 
 async function fetchTop10(): Promise<CryptoAsset[]> {
   if (config.MOCK_CRYPTO) return mockTop10;
@@ -101,20 +102,8 @@ export async function getCoinHistory(
 
     const points: PricePoint[] = raw.prices.map((point: [number, number]) => {
       const d = new Date(point[0]);
-      if (range === '1D') {
-        return {
-          t: d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
-          price: point[1],
-        };
-      }
-      if (range === '7D') {
-        return {
-          t: d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
-          price: point[1],
-        };
-      }
       return {
-        t: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        t: formatTimeLabel(d, range),
         price: point[1],
       };
     });

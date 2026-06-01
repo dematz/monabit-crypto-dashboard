@@ -11,7 +11,7 @@ import {
 import { getPreferences, upsertPreferences } from './preferences.repository.js';
 import { listFavorites, addFavorite, removeFavorite } from './favorites.repository.js';
 import { listAlerts, createAlert, deactivateAlert, deleteAlert } from './alerts.repository.js';
-import { updateUserSchema, createUserSchema } from './users.schema.js';
+import { updateUserSchema, updateMeSchema, createUserSchema } from './users.schema.js';
 import { updatePreferencesSchema } from './preferences.schema.js';
 import { addFavoriteSchema, createAlertSchema } from './alerts-favorites.schema.js';
 import { HttpError } from '../../shared/errors/index.js';
@@ -27,7 +27,9 @@ export async function usersModule(app: FastifyInstance) {
 
   app.post('/users', { preHandler: [authenticate, requireAdmin] }, async (request) => {
     const input = createUserSchema.parse(request.body);
-    return createUser(input);
+    const user = await createUser(input);
+    (request as unknown as Record<string, unknown>).createdEntityId = user.id;
+    return user;
   });
 
   app.get('/users/me', { preHandler: [authenticate] }, async (request) => {
@@ -37,7 +39,7 @@ export async function usersModule(app: FastifyInstance) {
   });
 
   app.patch('/users/me', { preHandler: [authenticate] }, async (request) => {
-    const input = updateUserSchema.parse(request.body);
+    const input = updateMeSchema.parse(request.body);
     const user = await updateUser(request.user.id, input);
     return user;
   });
