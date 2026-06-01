@@ -92,7 +92,7 @@ describe('wsPriceUpdateSchema', () => {
 describe('authMeResponseSchema', () => {
   const validResponse = {
     user: { id: 'abc', email: 'test@test.com', role: 'admin' },
-    profile: { display_name: 'Admin' },
+    profile: { display_name: 'Admin', role: 'admin' },
   };
 
   it('validates auth response with profile', () => {
