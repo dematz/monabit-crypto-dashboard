@@ -18,8 +18,6 @@ supabase/volumes
 infra/docker/.env
 infra/docker/.env.docker
 
-
-
 # Dev-team-only documentation (contains real keys and secrets)
 docs/local/
 
@@ -31,3 +29,9 @@ monabit-reqv2.md
 docs/
 .agents/
 .claude/
+
+# Tool lockfiles
+skills-lock.json
+
+# Node version — .node-version is used instead
+.nvmrc

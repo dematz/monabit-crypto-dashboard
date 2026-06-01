@@ -75,10 +75,8 @@ apps/backend/
 │   │   │   └── index.ts             # HttpError class + global error handler
 │   │   ├── health/
 │   │   │   └── index.ts             # GET /health (database + CoinGecko + Binance WS)
-│   │   ├── logger/
-│   │   │   └── index.ts             # Pino logger with redaction config
-│   │   └── middleware/
-│   │       └── index.ts             # Shared middleware exports
+│   │   └── logger/
+│   │       └── index.ts             # Pino logger with redaction config
 │   └── lib/
 │       └── supabase.ts              # Supabase admin client (service role)
 ├── Dockerfile                        # Multi-stage: build → run on Node 20-alpine
@@ -101,24 +99,24 @@ apps/backend/
 
 ### Users
 
-| Method   | Path                                   | Auth         | Description        |
-| -------- | -------------------------------------- | ------------ | ------------------ |
-| `GET`    | `/users`                               | Bearer+Admin | List all users     |
-| `POST`   | `/users`                               | Bearer+Admin | Create user        |
-| `GET`    | `/users/me`                            | Bearer       | Get own profile    |
-| `PATCH`  | `/users/me`                            | Bearer       | Update own profile |
-| `GET`    | `/users/me/preferences`                | Bearer       | Get preferences    |
-| `PATCH`  | `/users/me/preferences`                | Bearer       | Upsert preferences |
-| `GET`    | `/users/me/favorites`                  | Bearer       | List favorites     |
-| `POST`   | `/users/me/favorites`                  | Bearer       | Add favorite       |
-| `DELETE` | `/users/me/favorites/:coinId`          | Bearer       | Remove favorite    |
-| `GET`    | `/users/me/alerts`                     | Bearer       | List price alerts  |
-| `POST`   | `/users/me/alerts`                     | Bearer       | Create alert       |
-| `PATCH`  | `/users/me/alerts/:alertId/deactivate` | Bearer       | Deactivate alert   |
-| `DELETE` | `/users/me/alerts/:alertId`            | Bearer       | Delete alert       |
-| `GET`    | `/users/:id`                           | Bearer+Admin | Get user by ID     |
-| `PATCH`  | `/users/:id`                           | Bearer+Admin | Update user        |
-| `DELETE` | `/users/:id`                           | Bearer+Admin | Deactivate user    |
+| Method   | Path                                   | Auth         | Description                            |
+| -------- | -------------------------------------- | ------------ | -------------------------------------- |
+| `GET`    | `/users`                               | Bearer+Admin | List all users                         |
+| `POST`   | `/users`                               | Bearer+Admin | Create user (sends verification email) |
+| `GET`    | `/users/me`                            | Bearer       | Get own profile                        |
+| `PATCH`  | `/users/me`                            | Bearer       | Update own profile                     |
+| `GET`    | `/users/me/preferences`                | Bearer       | Get preferences                        |
+| `PATCH`  | `/users/me/preferences`                | Bearer       | Upsert preferences                     |
+| `GET`    | `/users/me/favorites`                  | Bearer       | List favorites                         |
+| `POST`   | `/users/me/favorites`                  | Bearer       | Add favorite                           |
+| `DELETE` | `/users/me/favorites/:coinId`          | Bearer       | Remove favorite                        |
+| `GET`    | `/users/me/alerts`                     | Bearer       | List price alerts                      |
+| `POST`   | `/users/me/alerts`                     | Bearer       | Create alert                           |
+| `PATCH`  | `/users/me/alerts/:alertId/deactivate` | Bearer       | Deactivate alert                       |
+| `DELETE` | `/users/me/alerts/:alertId`            | Bearer       | Delete alert                           |
+| `GET`    | `/users/:id`                           | Bearer+Admin | Get user by ID                         |
+| `PATCH`  | `/users/:id`                           | Bearer+Admin | Update user                            |
+| `DELETE` | `/users/:id`                           | Bearer+Admin | Deactivate user                        |
 
 ### Crypto
 
@@ -161,9 +159,10 @@ WebSocket messages are JSON: `{ "s": "BTCUSDT", "c": "73000.00", "P": "2.5", "t"
 2. Supabase returns a JWT token
 3. Frontend sends `Authorization: Bearer <token>` on every API request
 4. Backend validates the token via `supabaseAdmin.auth.getUser(token)`
-5. Middleware extracts `user.id`, `user.email`, and `profile.role`
+5. Middleware resolves role from `user_profiles.role` first, falling back to `user_metadata.role`
 6. Admin-only routes additionally check `profile.role === 'admin'`
 7. Inactive users (`is_active === false`) receive `403 Forbidden`
+8. Admin-created users require email verification before sign-in (`email_confirm: false`)
 
 ---
 
@@ -220,7 +219,7 @@ On startup, `warmupCache()` pre-fetches top 10 and market overview to avoid cold
 | `CACHE_TTL_MARKET_OVERVIEW` | No       | `120`                              | Cache TTL for market overview (seconds) |
 | `CACHE_TTL_COIN_HISTORY`    | No       | `300`                              | Cache TTL for coin history (seconds)    |
 | `LOG_LEVEL`                 | No       | `info`                             | Pino log level                          |
-| `APP_VERSION`               | No       | `0.1.0`                            | Version reported by /health             |
+| `APP_VERSION`               | No       | `0.0.0`                            | Version reported by /health             |
 
 All variables are validated with Zod at startup. Invalid values cause the server to exit with a clear error message.
 

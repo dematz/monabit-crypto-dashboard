@@ -39,7 +39,8 @@ apps/frontend/
 │   │   ├── dashboard/
 │   │   │   ├── dashboard.tsx        # Main dashboard with top 10 + KPIs + chart
 │   │   │   └── settings.tsx         # User preferences (theme, currency)
-│   │   └── users/users-page.tsx     # Admin user management
+│   │   └── users/
+│   │       └── index.tsx          # Admin user management
 │   ├── components/
 │   │   ├── features/
 │   │   │   ├── ai-assistant.tsx     # Groq AI chat panel
@@ -100,11 +101,14 @@ apps/frontend/
 ### Authentication
 
 - Email/password registration and login via Supabase Auth
+- Email verification required for all new accounts (self-signup and admin-created)
 - Google OAuth with redirect-based flow
 - `ProtectedRoute` component handles:
+  - Shows spinner when token exists but user profile hasn't loaded yet
   - Redirect to `/login` when not authenticated
   - OAuth hash race condition: detects `#access_token=` in URL, shows "Signing in..." spinner, waits for Supabase to process the session
 - Automatic token refresh on 401 responses
+- User role always fetched from `/auth/me` API (never persisted to localStorage)
 - Inactive user detection: shows toast and redirects to login
 
 ### Dashboard
@@ -162,10 +166,10 @@ login           → Login page (lazy)
 
 **Zustand** (`app-store.ts`):
 
-- Auth state: `user`, `session`, `isAuthenticated`, `isLoading`
-- User profile: `profile` with `role`, `is_active`, `display_name`
-- Preferences: `theme`, `currency`, `refreshInterval`
-- Sync actions: `fetchAndSetProfile()`, `updatePreferences()`
+- `token` persisted to localStorage; `user` always fetched fresh from API on session restore
+- User profile: `role`, `is_active`, `display_name` — sourced from `user_profiles` via `/auth/me`
+- Preferences: `theme`, `currency`, `refreshInterval` — persisted to localStorage
+- Session invalidation: `fetchAndSetProfile()` called on every Supabase auth event
 
 **TanStack Query** (`use-top10-crypto.ts`, service hooks):
 

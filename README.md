@@ -17,7 +17,8 @@ Fullstack web application for consulting, visualizing, and managing cryptocurren
 This project fulfills the technical challenge requirements for a crypto dashboard, covering:
 
 - User registration, login, logout, and Google OAuth authentication
-- Protected routes and role-based access (`admin` / `user`)
+- Email verification required for all new accounts (self-signup and admin-created)
+- Protected routes and role-based access (`admin` / `user`) sourced from `user_profiles`
 - User management (list, create, edit, deactivate)
 - Dashboard with top 10 cryptocurrencies, KPIs, and charts
 - Real-time price updates via WebSocket
@@ -93,7 +94,7 @@ monabit-crypto-dashboard/
 ├── supabase/
 │   ├── migrations/        # SQL migrations with RLS policies
 │   ├── seed.sql           # Initial seed data
-│   └── config.toml        # Supabase project configuration
+│   └── config.toml        # Supabase local development config
 ├── infra/
 │   ├── cloudbuild/        # Cloud Build YAML configs
 │   │   ├── cloudbuild.frontend.yaml
@@ -202,8 +203,9 @@ audit_logs
 ## Authentication & Security
 
 - **Supabase Auth** (email/password + Google OAuth)
+- **Email verification**: required for all new accounts — self-signup sends confirmation email; admin-created users must also verify before signing in
 - **JWT Bearer** tokens validated on every backend request
-- **Role-based access**: `admin` and `user` roles stored in `user_profiles`
+- **Role-based access**: `admin` and `user` roles sourced from `user_profiles` (not `user_metadata`)
 - **Inactive user blocking**: middleware returns 403 for deactivated accounts
 - **CORS**: Strict origin whitelist via `ALLOWED_ORIGINS`
 - **Rate limiting**: 100 req/min global, 10 req/min auth, 10 req/hr AI
@@ -233,6 +235,24 @@ pnpm --filter @monabit/backend dev
 pnpm --filter @monabit/frontend dev
 ```
 
+### Environment Setup
+
+Three `.env.example` files are provided — copy each to its corresponding `.env` and fill in values:
+
+| File                                                       | Purpose                                                       |
+| ---------------------------------------------------------- | ------------------------------------------------------------- |
+| [`.env.example`](.env.example)                             | Root — for `supabase start` (local Supabase + Google OAuth)   |
+| [`apps/backend/.env.example`](apps/backend/.env.example)   | Backend — Supabase keys, CORS, CoinGecko, Groq                |
+| [`apps/frontend/.env.example`](apps/frontend/.env.example) | Frontend — Vite build vars (API URL, Supabase URL + anon key) |
+
+Required variables for local development:
+
+- **Backend**: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- **Frontend**: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- **Google OAuth** (for `supabase start`): `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID`, `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET`, `SUPABASE_AUTH_EXTERNAL_GOOGLE_REDIRECT_URI`
+
+For Docker Compose, use [`infra/docker/.env.docker.template`](infra/docker/.env.docker.template).
+
 ### Docker Compose
 
 ```bash
@@ -247,12 +267,8 @@ docker compose --env-file infra/docker/.env.docker \
 ```bash
 pnpm test                    # All workspaces
 pnpm --filter @monabit/backend test    # Backend (44 tests)
-pnpm --filter @monabit/frontend test  # Frontend (55 tests)
+pnpm --filter @monabit/frontend test   # Frontend (55 tests)
 ```
-
-### Environment Variables
-
-See [`apps/backend/.env.example`](apps/backend/.env.example) and [`apps/frontend/.env.example`](apps/frontend/.env.example) for the full list of required variables.
 
 ---
 
@@ -264,10 +280,12 @@ Deployed via `scripts/deploy.sh` (in `.gitignore`):
 
 ```bash
 ./scripts/deploy.sh           # Full: secrets + backend + frontend + verify
-./scripts/deploy.sh backend    # Backend only
+./scripts/deploy.sh backend   # Backend only
 ./scripts/deploy.sh frontend  # Frontend only
 ./scripts/deploy.sh secrets   # Update ALLOWED_ORIGINS in Secret Manager
 ```
+
+Each deploy automatically routes traffic to the latest Cloud Run revision via `update-traffic --to-latest`.
 
 ### Required GCP Secrets
 
@@ -282,7 +300,9 @@ Deployed via `scripts/deploy.sh` (in `.gitignore`):
 
 ### Supabase Configuration
 
-Set in Dashboard → Authentication → URL Configuration:
+For local development, `supabase/config.toml` sets `site_url` to `http://localhost:3100` and `enable_confirmations = true` (email verification required).
+
+For production, configure in **Supabase Dashboard → Authentication → URL Configuration**:
 
 - **Site URL**: your frontend Cloud Run URL
 - **Redirect URLs**: your frontend Cloud Run URL + `/**`
@@ -384,4 +404,4 @@ Issues commonly found in AI-generated code were identified and corrected:
 
 ## License
 
-Private repository. All rights reserved.
+Public repository.
